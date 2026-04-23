@@ -18,6 +18,9 @@ public class UniversalDoor : MonoBehaviour // Основной класс скр
 
     [Header("Door Settings")] // Заголовок блока настроек двери в Inspector
     public bool isOpen = false; // Открыта ли дверь сейчас
+
+    public bool IsOpen => isOpen; // Безопасное публичное свойство только для чтения, чтобы другие скрипты (например кот) могли узнать состояние двери, не ломая старую систему
+
     public DoorOpenDirection openDirection = DoorOpenDirection.Forward; // Направление открытия двери
 
     [Header("Rotation Axis")] // Заголовок блока выбора оси вращения
