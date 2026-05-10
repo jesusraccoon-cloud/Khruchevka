@@ -1,155 +1,143 @@
-using UnityEngine; // Подключаем базовые классы Unity (Transform, Vector3, MonoBehaviour и т.д.)
+using UnityEngine; // Подключаем Unity-классы: MonoBehaviour, Transform, Vector3, Debug
 
-public class CassettePickup : MonoBehaviour // Создаём скрипт, который можно повесить на объект
+public class CassettePickup : MonoBehaviour, IInteractable // Кассета теперь интерактивный объект
 {
-    [Header("Interaction")] // Заголовок в Inspector
+    [Header("Move Settings")] // Заголовок настроек движения в Inspector
 
-    [SerializeField] private Transform player; // Ссылка на игрока (обычно камера)
-    [SerializeField] private float interactDistance = 3f; // Дистанция взаимодействия лучом
-    [SerializeField] private KeyCode interactKey = KeyCode.E; // Кнопка взаимодействия
-    [SerializeField] private LayerMask interactLayers = ~0; // Слои для Raycast
+    [SerializeField] private Transform ejectPoint; // Точка, куда кассета выезжает перед подбором
 
-    [Header("Move Settings")] // Заголовок
-    [SerializeField] private Transform ejectPoint; // Точка, куда будет двигаться кассета
-    [SerializeField] private float moveSpeed = 5f; // Скорость движения кассеты
+    [SerializeField] private float moveSpeed = 5f; // Скорость движения кассеты к точке EjectPoint
 
-    [Header("Inventory")] // Заголовок
+    [Header("Inventory")] // Заголовок настроек инвентаря
+
     [SerializeField] private CassetteInventoryUI inventoryUI; // Ссылка на UI счётчика кассет
 
-    [Header("Optional Auto Find")] // Заголовок
-    [SerializeField] private bool autoFindPlayer = true; // Автоматически искать игрока
-    [SerializeField] private bool autoFindInventoryUI = true; // Автоматически искать UI
-    [SerializeField] private bool autoFindEjectPoint = true; // Автоматически искать точку выезда
-    [SerializeField] private string ejectPointName = "EjectPoint"; // Имя объекта точки
-    [SerializeField] private string playerTag = "MainCamera"; // Тег игрока
+    [Header("Optional Auto Find")] // Заголовок автопоиска ссылок
 
-    private Vector3 targetPosition; // Позиция, куда должна поехать кассета
-    private bool isPickingUp = false; // Флаг: кассета сейчас движется
-    private bool isCollected = false; // Флаг: кассета уже собрана
+    [SerializeField] private bool autoFindInventoryUI = true; // Нужно ли автоматически искать UI счётчика
+
+    [SerializeField] private bool autoFindEjectPoint = true; // Нужно ли автоматически искать EjectPoint
+
+    [SerializeField] private string ejectPointName = "EjectPoint"; // Имя дочернего объекта-точки выезда
+
+    private Vector3 targetPosition; // Позиция, куда должна ехать кассета
+
+    private bool isPickingUp = false; // Двигается ли кассета сейчас
+
+    private bool isCollected = false; // Собрана ли кассета уже
 
     private void Awake() // Вызывается при создании объекта
     {
-        TryFindReferences(); // Пытаемся автоматически найти ссылки
+        TryFindReferences(); // Пробуем автоматически найти нужные ссылки
     }
 
     private void Start() // Вызывается перед первым кадром
     {
-        ValidateSetup(); // Проверяем, всё ли настроено правильно
+        ValidateSetup(); // Проверяем, всё ли назначено
     }
 
     private void Update() // Вызывается каждый кадр
     {
-        if (isCollected) return; // Если уже собрана — ничего не делаем
-
-        if (isPickingUp) // Если кассета уже движется
+        if (isPickingUp) // Если кассета сейчас выезжает
         {
-            MoveToEjectPoint(); // Продолжаем движение
-            return; // Выходим из Update
-        }
-
-        if (Input.GetKeyDown(interactKey) && CanInteract()) // Если нажали кнопку и можно взаимодействовать
-        {
-            StartPickup(); // Начинаем подбор
+            MoveToEjectPoint(); // Двигаем кассету к точке выезда
         }
     }
 
-    private void TryFindReferences() // Автоматический поиск ссылок
+    public void Interact() // Метод, который вызывает PlayerInteractor при нажатии E
     {
-        if (autoFindPlayer && player == null) // Если включён автопоиск и игрок не назначен
+        if (isCollected) return; // Если кассета уже собрана — ничего не делаем
+
+        if (isPickingUp) return; // Если кассета уже движется — повторно не запускаем
+
+        StartPickup(); // Запускаем подбор кассеты
+    }
+
+    private void TryFindReferences() // Метод автопоиска ссылок
+    {
+        if (autoFindInventoryUI && inventoryUI == null) // Если включён автопоиск UI и ссылка пустая
         {
-            GameObject playerObject = GameObject.FindGameObjectWithTag(playerTag); // Ищем объект по тегу
-            if (playerObject != null) player = playerObject.transform; // Если нашли — сохраняем Transform
+            inventoryUI = FindFirstObjectByType<CassetteInventoryUI>(); // Ищем первый CassetteInventoryUI в сцене
         }
 
-        if (autoFindInventoryUI && inventoryUI == null) // Если включён автопоиск UI
+        if (autoFindEjectPoint && ejectPoint == null) // Если включён автопоиск EjectPoint и ссылка пустая
         {
-            inventoryUI = FindFirstObjectByType<CassetteInventoryUI>(); // Ищем UI в сцене
-        }
+            Transform foundPoint = transform.parent != null // Проверяем, есть ли родитель
+                ? transform.parent.Find(ejectPointName) // Если родитель есть — ищем EjectPoint внутри родителя
+                : null; // Если родителя нет — ничего не нашли
 
-        if (autoFindEjectPoint && ejectPoint == null) // Если включён автопоиск точки
-        {
-            Transform foundPoint = transform.parent != null // Проверяем есть ли родитель
-                ? transform.parent.Find(ejectPointName) // Ищем EjectPoint внутри родителя
-                : null;
-
-            if (foundPoint != null) ejectPoint = foundPoint; // Если нашли — сохраняем
+            if (foundPoint != null) // Если точку нашли
+            {
+                ejectPoint = foundPoint; // Запоминаем найденную точку
+            }
         }
     }
 
-    private void ValidateSetup() // Проверка корректности настроек
+    private void ValidateSetup() // Метод проверки настроек
     {
-        if (player == null) Debug.LogWarning($"{gameObject.name}: Player не найден."); // Предупреждение если нет игрока
-        if (inventoryUI == null) Debug.LogWarning($"{gameObject.name}: UI не найден."); // Предупреждение если нет UI
-        if (ejectPoint == null) Debug.LogWarning($"{gameObject.name}: EjectPoint не найден."); // Предупреждение если нет точки
-    }
-
-    private bool CanInteract() // Проверка: можно ли взаимодействовать через луч
-    {
-        if (player == null || ejectPoint == null) return false; // Если нет ссылок — нельзя
-
-        Ray ray = new Ray(player.position, player.forward); // Создаём луч из позиции игрока вперёд
-        RaycastHit hit; // Данные попадания луча
-
-        if (Physics.Raycast(ray, out hit, interactDistance, interactLayers)) // Если луч попал во что-то
+        if (inventoryUI == null) // Если UI не найден
         {
-            if (hit.collider == null) return false; // Если коллайдер почему-то пустой — нельзя
-
-            if (hit.collider.gameObject == gameObject) return true; // Если попали прямо в этот объект кассеты — можно
-
-            if (hit.collider.transform.IsChildOf(transform)) return true; // Если попали в дочерний объект этой кассеты — тоже можно
+            Debug.LogWarning($"{gameObject.name}: CassetteInventoryUI не найден."); // Пишем предупреждение
         }
 
-        return false; // Во всех остальных случаях — нельзя
+        if (ejectPoint == null) // Если EjectPoint не найден
+        {
+            Debug.LogWarning($"{gameObject.name}: EjectPoint не найден."); // Пишем предупреждение
+        }
     }
 
-    private void StartPickup() // Начало подбора кассеты
+    private void StartPickup() // Метод начала подбора кассеты
     {
-        targetPosition = ejectPoint.position; // Запоминаем точку назначения
-        isPickingUp = true; // Включаем движение
+        if (ejectPoint == null) return; // Если нет точки выезда — ничего не делаем
+
+        targetPosition = ejectPoint.position; // Запоминаем позицию точки выезда
+
+        isPickingUp = true; // Включаем режим движения кассеты
     }
 
-    private void MoveToEjectPoint() // Движение кассеты
+    private void MoveToEjectPoint() // Метод движения кассеты
     {
-        transform.position = Vector3.Lerp( // Плавно перемещаем объект
-            transform.position, // Откуда
-            targetPosition, // Куда
-            Time.deltaTime * moveSpeed // Скорость
+        transform.position = Vector3.Lerp( // Плавно двигаем кассету
+            transform.position, // От текущей позиции
+            targetPosition, // К целевой позиции
+            Time.deltaTime * moveSpeed // С учётом скорости и времени кадра
         );
 
-        float distanceToTarget = Vector3.Distance(transform.position, targetPosition); // Проверяем расстояние до цели
+        float distanceToTarget = Vector3.Distance(transform.position, targetPosition); // Считаем расстояние до цели
 
-        if (distanceToTarget <= 0.02f) // Если почти дошли
+        if (distanceToTarget <= 0.02f) // Если кассета почти дошла до точки
         {
             CompletePickup(); // Завершаем подбор
         }
     }
 
-    private void CompletePickup() // Завершение подбора
+    private void CompletePickup() // Метод завершения подбора
     {
         isPickingUp = false; // Останавливаем движение
-        isCollected = true; // Помечаем как собранную
 
-        if (inventoryUI != null) inventoryUI.AddCassette(); // Добавляем кассету в UI
+        isCollected = true; // Помечаем кассету как собранную
 
-        gameObject.SetActive(false); // Выключаем объект (исчезает из сцены)
+        if (inventoryUI != null) // Если UI найден
+        {
+            inventoryUI.AddCassette(); // Добавляем кассету в счётчик
+        }
+
+        gameObject.SetActive(false); // Выключаем объект кассеты
     }
 
-#if UNITY_EDITOR // Этот код работает только в редакторе Unity
-    private void OnDrawGizmosSelected() // Рисует подсказки в Scene
+#if UNITY_EDITOR // Код ниже работает только в редакторе Unity
+
+    private void OnDrawGizmosSelected() // Рисуем подсказки, когда объект выбран
     {
-        Gizmos.color = Color.yellow; // Цвет — жёлтый
-
-        if (player != null) // Если есть ссылка на игрока
+        if (ejectPoint != null) // Если точка выезда назначена
         {
-            Gizmos.DrawRay(player.position, player.forward * interactDistance); // Рисуем луч взаимодействия
-        }
+            Gizmos.color = Color.cyan; // Цвет линии — голубой
 
-        if (ejectPoint != null) // Если есть точка
-        {
-            Gizmos.color = Color.cyan; // Цвет — голубой
-            Gizmos.DrawLine(transform.position, ejectPoint.position); // Линия до точки
-            Gizmos.DrawSphere(ejectPoint.position, 0.03f); // Маленький шарик в точке
+            Gizmos.DrawLine(transform.position, ejectPoint.position); // Рисуем линию от кассеты до EjectPoint
+
+            Gizmos.DrawSphere(ejectPoint.position, 0.03f); // Рисуем маленький шарик на EjectPoint
         }
     }
+
 #endif
 }

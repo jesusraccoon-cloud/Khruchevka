@@ -1,84 +1,73 @@
-using UnityEngine;
+using UnityEngine; // Подключаем Unity-классы: MonoBehaviour, Renderer, Color, Material
 
-public class TumblerSwitch : MonoBehaviour
+public class TumblerSwitch : MonoBehaviour, IInteractable // Скрипт тумблера теперь является интерактивным объектом
 {
-    public bool isOn = false;
-    // Включен ли тумблер сейчас
+    public bool isOn = false; // Хранит состояние тумблера: включен или выключен
 
-    [Header("Renderer")]
-    public Renderer targetRenderer;
-    // Renderer, которому будем менять цвет
+    [Header("Renderer")] // Заголовок в Inspector
 
-    [Header("Colors")]
-    public Color normalColor = Color.gray;
-    // Обычный цвет
+    public Renderer targetRenderer; // Renderer тумблера, у которого будем менять цвет
 
-    public Color highlightColor = Color.yellow;
-    // Цвет при наведении
+    [Header("Colors")] // Заголовок в Inspector
 
-    public Color activeColor = Color.green;
-    // Цвет, когда тумблер уже включен
+    public Color normalColor = Color.gray; // Цвет выключенного тумблера
 
-    private Material runtimeMaterial;
-    // Отдельная копия материала именно для этого тумблера
+    public Color highlightColor = Color.yellow; // Цвет при наведении, пока позже не используем
 
-    void Start()
+    public Color activeColor = Color.green; // Цвет включенного тумблера
+
+    private Material runtimeMaterial; // Отдельный материал для этого тумблера, чтобы не менять цвет всем сразу
+
+    private void Start() // Запускается один раз при старте сцены
     {
-        // Если Renderer не задан вручную — пробуем взять его с этого объекта
-        if (targetRenderer == null)
+        if (targetRenderer == null) // Если Renderer не назначен вручную
         {
-            targetRenderer = GetComponent<Renderer>();
+            targetRenderer = GetComponent<Renderer>(); // Пробуем найти Renderer на этом же объекте
         }
 
-        // Если и тут не нашли — пробуем взять Renderer у дочерних объектов
-        if (targetRenderer == null)
+        if (targetRenderer == null) // Если Renderer всё ещё не найден
         {
-            targetRenderer = GetComponentInChildren<Renderer>();
+            targetRenderer = GetComponentInChildren<Renderer>(); // Пробуем найти Renderer в дочерних объектах
         }
 
-        // Если Renderer найден — создаем отдельную копию материала
-        // чтобы цвет менялся только у этого тумблера
-        if (targetRenderer != null)
+        if (targetRenderer != null) // Если Renderer найден
         {
-            runtimeMaterial = new Material(targetRenderer.material);
-            targetRenderer.material = runtimeMaterial;
+            runtimeMaterial = new Material(targetRenderer.material); // Создаём копию материала только для этого тумблера
+            targetRenderer.material = runtimeMaterial; // Назначаем копию материала этому Renderer
         }
 
-        UpdateVisual();
-        // Сразу ставим стартовый цвет
+        UpdateVisual(); // Обновляем цвет тумблера при старте
     }
 
-    public void Toggle()
+    public void Interact() // Метод, который вызывает PlayerInteractor при нажатии E
     {
-        isOn = !isOn;
-        // Меняем состояние на противоположное
-
-        UpdateVisual();
-        // Обновляем внешний вид
+        Toggle(); // Переключаем тумблер
     }
 
-    public void SetHighlight(bool state)
+    public void Toggle() // Метод переключения тумблера
     {
-        // Если материал не найден — выходим
-        if (runtimeMaterial == null) return;
+        isOn = !isOn; // Меняем состояние на противоположное
 
-        // Если тумблер уже включен — он всегда остается зеленым
-        if (isOn)
+        UpdateVisual(); // Обновляем цвет после изменения состояния
+    }
+
+    public void SetHighlight(bool state) // Метод подсветки, оставляем для совместимости со старым TumblerInteractor
+    {
+        if (runtimeMaterial == null) return; // Если материала нет, выходим
+
+        if (isOn) // Если тумблер включен
         {
-            runtimeMaterial.color = activeColor;
-            return;
+            runtimeMaterial.color = activeColor; // Оставляем активный цвет
+            return; // Выходим, чтобы подсветка не перебила зелёный цвет
         }
 
-        // Если наводимся — желтый, если нет — обычный
-        runtimeMaterial.color = state ? highlightColor : normalColor;
+        runtimeMaterial.color = state ? highlightColor : normalColor; // Если наведены — жёлтый, если нет — обычный
     }
 
-    public void UpdateVisual()
+    public void UpdateVisual() // Метод обновления внешнего вида
     {
-        // Если материал не найден — выходим
-        if (runtimeMaterial == null) return;
+        if (runtimeMaterial == null) return; // Если материала нет, выходим
 
-        // Если тумблер включен — зеленый, иначе обычный
-        runtimeMaterial.color = isOn ? activeColor : normalColor;
+        runtimeMaterial.color = isOn ? activeColor : normalColor; // Если включен — зелёный, если выключен — серый
     }
 }

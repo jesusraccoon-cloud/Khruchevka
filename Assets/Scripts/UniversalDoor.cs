@@ -1,7 +1,7 @@
 using UnityEngine; // Подключаем Unity
 using System.Collections; // Подключаем работу с корутинами
 
-public class UniversalDoor : MonoBehaviour // Основной класс скрипта двери
+public class UniversalDoor : MonoBehaviour, IInteractable // Основные классы скрипта двери
 {
     public enum DoorOpenDirection // Направление открытия двери
     {
@@ -118,7 +118,6 @@ public class UniversalDoor : MonoBehaviour // Основной класс скр
 
     void Update() // Метод вызывается каждый кадр
     {
-        TryInteract(); // Проверяем нажатие игроком
         UpdateDoorRotation(); // Плавно вращаем дверь
     }
 
@@ -199,7 +198,26 @@ bool IsLookingAtHandle() // Метод проверки: смотрит ли и�
 
     return false; // Игрок не смотрит на эту ручку
 }
+    public void Interact() // Метод вызывается PlayerInteractor при нажатии E
+{
+    if (isBusy) return; // Если дверь сейчас занята анимацией — ничего не делаем
 
+    if (!isOpen) // Если дверь закрыта
+    {
+        if (CanOpenDoor()) // Проверяем тумблер/условия открытия
+        {
+            ToggleDoor(); // Открываем дверь
+        }
+        else // Если открыть нельзя
+        {
+            Debug.Log("Дверь не открывается: тумблер не активирован."); // Сообщение в Console
+        }
+    }
+    else // Если дверь открыта
+    {
+        ToggleDoor(); // Закрываем дверь
+    }
+}
     public void ToggleDoor() // Универсальный метод открыть или закрыть дверь
     {
         if (isBusy) return; // Если дверь занята — ничего не делаем
