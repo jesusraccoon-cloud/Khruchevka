@@ -1,107 +1,87 @@
-using UnityEngine; // подключаем базовые классы Unity
-using System.Collections; // подключаем корутины
+using UnityEngine; // Подключаем Unity-классы
+using System.Collections; // Подключаем корутины
 
-public class WardrobeHideHandle : MonoBehaviour // скрипт удержания E на ручке шкафа
+public class WardrobeHideHandle : MonoBehaviour, IInteractable, IHoldInteractable // Ручка шкафа поддерживает короткий клик и удержание
 {
-    public Camera playerCamera; // камера игрока, из неё будет идти Raycast
+    public PlayerHideController playerHideController; // Ссылка на систему пряток игрока
 
-    public PlayerHideController playerHideController; // ссылка на скрипт пряток игрока
+    public UniversalDoor wardrobeDoor; // Дверь шкафа, которую нужно открыть/закрыть
 
-    public UniversalDoor wardrobeDoor; // дверь шкафа, которую нужно открыть и закрыть
+    public Transform hidePoint; // Точка внутри шкафа, куда переносится игрок
 
-    public Transform hidePoint; // точка внутри шкафа
+    public Transform exitPoint; // Точка выхода перед шкафом
 
-    public Transform exitPoint; // точка перед шкафом
+    public float holdTimeToHide = 2f; // Сколько секунд нужно держать E, чтобы спрятаться
 
-    public float interactDistance = 2.5f; // дистанция взаимодействия с ручкой
+    public float doorOpenBeforeHideDelay = 0.4f; // Пауза после открытия двери перед прятаньем
 
-    public float holdTimeToHide = 2f; // сколько секунд нужно держать E
+    public float doorCloseAfterHideDelay = 0.4f; // Пауза перед закрытием двери после прятанья
 
-    public float doorOpenBeforeHideDelay = 0.4f; // пауза после открытия двери перед прятаньем
+    private bool isHiding = false; // Защита от повторного запуска прятанья
 
-    public float doorCloseAfterHideDelay = 0.4f; // пауза перед закрытием двери после прятанья
+    private bool hideStarted = false; // Было ли уже запущено прятанье во время текущего удержания
 
-    public LayerMask interactLayer; // слой, по которому Raycast ищет ручку
-
-    private float holdTimer = 0f; // таймер удержания E
-
-    private bool isLookingAtThisHandle = false; // смотрит ли игрок сейчас на эту ручку
-
-    private bool isHiding = false; // защита от повторного запуска прятанья
-
-    void Update() // вызывается каждый кадр
+    public void Interact() // Вызывается PlayerInteractor при коротком нажатии E
     {
-        if (isHiding) return; // если уже идет процесс прятанья — ничего не делаем
+        if (isHiding) return; // Если уже идёт процесс прятанья — ничего не делаем
 
-        CheckLookAtHandle(); // проверяем, смотрит ли игрок на эту ручку
+        if (playerHideController != null && playerHideController.isHidden) return; // Если игрок уже спрятан — дверь снаружи не трогаем
 
-        if (!isLookingAtThisHandle) // если игрок не смотрит на эту ручку
+        if (wardrobeDoor != null) // Если дверь шкафа назначена
         {
-            holdTimer = 0f; // сбрасываем таймер удержания
-            return; // выходим из Update
-        }
-
-        if (Input.GetKey(KeyCode.E)) // если игрок удерживает E
-        {
-            holdTimer += Time.deltaTime; // увеличиваем таймер удержания
-
-            if (holdTimer >= holdTimeToHide) // если E удерживали достаточно долго
-            {
-                holdTimer = 0f; // сбрасываем таймер
-
-                StartCoroutine(HideSequence()); // запускаем последовательность прятанья
-            }
-        }
-
-        if (Input.GetKeyUp(KeyCode.E)) // если игрок отпустил E
-        {
-            holdTimer = 0f; // сбрасываем таймер удержания
+            wardrobeDoor.Interact(); // Короткое E открывает или закрывает дверь шкафа
         }
     }
 
-    void CheckLookAtHandle() // проверка наведения на ручку
+    public void HoldInteract(float holdTime) // Вызывается каждый кадр, пока игрок держит E
     {
-        isLookingAtThisHandle = false; // сначала считаем, что игрок не смотрит на ручку
+        if (isHiding) return; // Если уже идёт процесс прятанья — ничего не делаем
 
-        if (playerCamera == null) return; // если камера не назначена — выходим
+        if (hideStarted) return; // Если прятанье уже запущено этим удержанием — не запускаем второй раз
 
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); // создаём луч из камеры вперёд
+        if (playerHideController == null) return; // Если контроллер пряток не назначен — выходим
 
-        RaycastHit hit; // переменная для результата Raycast
+        if (playerHideController.isHidden) return; // Если игрок уже спрятан — повторно не прячем
 
-        if (Physics.Raycast(ray, out hit, interactDistance, interactLayer)) // если луч попал в объект нужного слоя
+        if (holdTime >= holdTimeToHide) // Если игрок удерживал E достаточно долго
         {
-            if (hit.collider.gameObject == gameObject || hit.collider.transform.IsChildOf(transform)) // если попали именно в эту ручку
-            {
-                isLookingAtThisHandle = true; // игрок смотрит на эту ручку
-            }
+            hideStarted = true; // Запоминаем, что прятанье уже запущено
+
+            StartCoroutine(HideSequence()); // Запускаем последовательность прятанья
         }
     }
 
-    IEnumerator HideSequence() // последовательность залезания в шкаф
+    public void HoldCancel(float holdTime) // Вызывается, когда игрок отпустил E после долгого удержания
     {
-        if (playerHideController == null) yield break; // если игрок не назначен — выходим
+        hideStarted = false; // Сбрасываем флаг удержания
+    }
 
-        if (playerHideController.isHidden) yield break; // если игрок уже спрятан — выходим
+    IEnumerator HideSequence() // Последовательность залезания в шкаф
+    {
+        if (playerHideController == null) yield break; // Если контроллер пряток не назначен — выходим
 
-        isHiding = true; // блокируем повторный запуск
+        if (playerHideController.isHidden) yield break; // Если игрок уже спрятан — выходим
 
-        if (wardrobeDoor != null) // если дверь шкафа назначена
+        isHiding = true; // Блокируем повторный запуск
+
+        if (wardrobeDoor != null) // Если дверь шкафа назначена
         {
-            wardrobeDoor.OpenDoor(); // открываем дверь шкафа
+            wardrobeDoor.OpenDoor(); // Открываем дверь шкафа
         }
 
-        yield return new WaitForSeconds(doorOpenBeforeHideDelay); // ждем, чтобы дверь успела открыться
+        yield return new WaitForSeconds(doorOpenBeforeHideDelay); // Ждём, чтобы дверь успела открыться
 
-        playerHideController.Hide(hidePoint, exitPoint, wardrobeDoor); // прячем игрока внутрь шкафа
+        playerHideController.Hide(hidePoint, exitPoint, wardrobeDoor); // Прячем игрока внутрь шкафа
 
-        yield return new WaitForSeconds(doorCloseAfterHideDelay); // ждем немного после входа
+        yield return new WaitForSeconds(doorCloseAfterHideDelay); // Ждём немного после входа
 
-        if (wardrobeDoor != null) // если дверь шкафа назначена
+        if (wardrobeDoor != null) // Если дверь шкафа назначена
         {
-            wardrobeDoor.CloseDoor(); // закрываем дверь шкафа
+            wardrobeDoor.CloseDoor(); // Закрываем дверь шкафа
         }
 
-        isHiding = false; // разрешаем следующий запуск
+        isHiding = false; // Разрешаем следующий запуск
+
+        hideStarted = false; // Сбрасываем флаг удержания
     }
 }

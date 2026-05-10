@@ -35,14 +35,9 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
 
     [Header("Interaction")] // Заголовок блока взаимодействия
     public float maxClickTime = 0.35f; // Максимальное время короткого нажатия: если держали дольше — дверь не откроется
-    private bool isPressingOnThisHandle = false; // Начали ли мы нажатие именно по этой ручке
-    private float pressStartTime = 0f; // Время начала нажатия E
-    public float interactDistance = 2f; // Максимальная дистанция взаимодействия лучом
-    public KeyCode interactKey = KeyCode.E; // Кнопка взаимодействия
-    public LayerMask interactLayers = ~0; // Слои, по которым работает Raycast
 
     [Header("References")] // Заголовок блока ссылок на объекты
-    public Transform defaultOpener; // Камера или объект, откуда идет луч
+   
     public Collider handleInteractZone; // Коллайдер зоны ручки, в который должен попасть луч
 
     [Header("Handles")] // Заголовок блока ручек двери
@@ -75,11 +70,7 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
 
     void Start() // Метод вызывается один раз при запуске сцены
     {
-        if (defaultOpener == null && Camera.main != null) // Если ссылка на открывающий объект не задана, но есть Main Camera
-        {
-            defaultOpener = Camera.main.transform; // Автоматически назначаем Main Camera
-        }
-
+        
         closedRotation = transform.localRotation; // Запоминаем текущее локальное вращение как закрытое
 
         float direction = openDirection == DoorOpenDirection.Forward ? 1f : -1f; // Определяем базовое направление открытия
@@ -136,68 +127,6 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
         return requiredTumbler.isOn; // Открыть можно только если тумблер включен
     }
 
-    void TryInteract() // Метод проверки взаимодействия игрока с дверью
-{
-    if (defaultOpener == null) return; // Если не назначен открывающий объект — выходим
-    if (handleInteractZone == null) return; // Если не назначена зона ручки — выходим
-    if (isBusy) return; // Если дверь занята анимацией — выходим
-
-    if (Input.GetKeyDown(interactKey)) // Если игрок только нажал E
-    {
-        if (IsLookingAtHandle()) // Проверяем, смотрит ли он именно на ручку этой двери
-        {
-            isPressingOnThisHandle = true; // Запоминаем, что нажатие началось по этой ручке
-            pressStartTime = Time.time; // Запоминаем время начала нажатия
-        }
-    }
-
-    if (Input.GetKeyUp(interactKey)) // Если игрок отпустил E
-    {
-        if (!isPressingOnThisHandle) return; // Если нажатие началось не по этой ручке — выходим
-
-        isPressingOnThisHandle = false; // Сбрасываем состояние нажатия
-
-        float pressDuration = Time.time - pressStartTime; // Считаем, сколько игрок держал E
-
-        if (pressDuration > maxClickTime) return; // Если держал слишком долго — это не открытие двери, а другое действие
-
-        if (!IsLookingAtHandle()) return; // Если при отпускании уже не смотрим на ручку — дверь не открываем
-
-        if (!isOpen) // Если дверь сейчас закрыта
-        {
-            if (CanOpenDoor()) // Проверяем, можно ли ее открыть
-            {
-                ToggleDoor(); // Открываем дверь
-            }
-            else
-            {
-                Debug.Log("Дверь не открывается: тумблер не активирован."); // Сообщение в Console
-            }
-        }
-        else
-        {
-            ToggleDoor(); // Если дверь уже открыта — закрываем ее
-        }
-    }
-}
-    
-    
-bool IsLookingAtHandle() // Метод проверки: смотрит ли игрок на ручку этой двери
-{
-    Ray ray = new Ray(defaultOpener.position, defaultOpener.forward); // Создаем луч из камеры вперед
-
-    RaycastHit hit; // Переменная для хранения информации о попадании
-
-    if (Physics.Raycast(ray, out hit, interactDistance, interactLayers)) // Если луч попал в объект на нужной дистанции
-    {
-        if (hit.collider == handleInteractZone || hit.collider.transform.IsChildOf(handleInteractZone.transform)) // Если попали в зону ручки
-        {
-            return true; // Игрок смотрит на эту ручку
-        }
-    }
-
-    return false; // Игрок не смотрит на эту ручку
-}
     public void Interact() // Метод вызывается PlayerInteractor при нажатии E
 {
     if (isBusy) return; // Если дверь сейчас занята анимацией — ничего не делаем
