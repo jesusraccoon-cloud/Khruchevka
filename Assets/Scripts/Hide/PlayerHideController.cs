@@ -1,7 +1,7 @@
 using UnityEngine; // Подключаем Unity-классы
 using System.Collections; // Подключаем корутины
 
-public class PlayerHideController : MonoBehaviour, IHoldInteractable // Контроллер пряток игрока, теперь умеет реагировать на удержание E
+public class PlayerHideController : MonoBehaviour, IHoldInteractable // Контроллер пряток игрока через удержание E
 {
     public bool isHidden = false; // Спрятан ли игрок сейчас
 
@@ -32,13 +32,13 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
         characterController = GetComponent<CharacterController>(); // Автоматически ищем CharacterController
     }
 
-    public void HoldInteract(float holdTime) // Вызывается PlayerInteractor каждый кадр, пока игрок держит E
+    public void HoldInteract(float holdTime) // Вызывается каждый кадр, пока игрок держит E
     {
         if (!isHidden) return; // Если игрок не спрятан — выход не нужен
 
         if (isExiting) return; // Если уже выходим — ничего не делаем
 
-        if (exitStarted) return; // Если выход уже запущен этим удержанием — повторно не запускаем
+        if (exitStarted) return; // Если выход уже запущен — повторно не запускаем
 
         if (Time.time < hideEnterTime + exitInputDelay) return; // Если задержка после входа ещё не прошла — выходим
 
@@ -50,7 +50,7 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
         }
     }
 
-    public void HoldCancel(float holdTime) // Вызывается PlayerInteractor, когда игрок отпустил E после удержания
+    public void HoldCancel(float holdTime) // Вызывается, когда игрок отпустил E
     {
         exitStarted = false; // Сбрасываем флаг выхода
     }
@@ -127,6 +127,8 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
 
     private void SetMovement(bool enabledState) // Включает или выключает движение
     {
+        if (movementScriptsToDisable == null) return; // Если массив не назначен — выходим
+
         for (int i = 0; i < movementScriptsToDisable.Length; i++) // Перебираем все скрипты движения
         {
             if (movementScriptsToDisable[i] != null) // Если ссылка не пустая

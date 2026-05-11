@@ -62,6 +62,8 @@ public class WardrobeHideHandle : MonoBehaviour, IInteractable, IHoldInteractabl
 
         if (playerHideController.isHidden) yield break; // Если игрок уже спрятан — выходим
 
+        if (hidePoint == null || exitPoint == null) yield break; // Если точка внутри шкафа или точка выхода не назначены — сразу останавливаем coroutine
+
         isHiding = true; // Блокируем повторный запуск
 
         if (wardrobeDoor != null) // Если дверь шкафа назначена

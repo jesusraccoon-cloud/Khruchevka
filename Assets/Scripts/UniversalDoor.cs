@@ -34,11 +34,10 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
     public float closeSpeed = 7f; // Скорость закрытия двери
 
     [Header("Interaction")] // Заголовок блока взаимодействия
-    public float maxClickTime = 0.35f; // Максимальное время короткого нажатия: если держали дольше — дверь не откроется
 
     [Header("References")] // Заголовок блока ссылок на объекты
    
-    public Collider handleInteractZone; // Коллайдер зоны ручки, в который должен попасть луч
+    public Collider handleInteractZone; // Коллайдер зоны ручки, в который должен попасть луч (под вопросом удаления)
 
     [Header("Handles")] // Заголовок блока ручек двери
     public Transform outsideHandle; // Внешняя ручка двери
@@ -139,7 +138,7 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
         }
         else // Если открыть нельзя
         {
-            Debug.Log("Дверь не открывается: тумблер не активирован."); // Сообщение в Console
+
         }
     }
     else // Если дверь открыта

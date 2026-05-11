@@ -8,21 +8,23 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
 
     public KeyCode interactKey = KeyCode.E; // Кнопка взаимодействия
 
-    public KeyCode hitKey = KeyCode.Mouse0; // Кнопка удара, по умолчанию левая кнопка мыши
+    public KeyCode hitKey = KeyCode.Mouse0; // Кнопка удара
 
     public LayerMask interactLayers = ~0; // Слои взаимодействия
 
-    public float shortClickMaxTime = 0.35f; // Максимальная длительность короткого клика
+    public float shortClickMaxTime = 0.35f; // Максимальное время короткого клика
 
-    public PlayerHideController playerHideController; // Ссылка на контроллер пряток игрока
+    public PlayerHideController playerHideController; // Контроллер пряток
 
-    private IInteractable currentInteractable; // Объект для короткого взаимодействия
+    public ObjectGrabber objectGrabber; // Скрипт захвата предметов
 
-    private IHitInteractable currentHitInteractable; // Объект, по которому можно ударить
+    private IInteractable currentInteractable; // Текущий объект короткого взаимодействия
 
-    private IHoldInteractable currentHoldInteractable; // Объект для удержания
+    private IHitInteractable currentHitInteractable; // Текущий объект удара
 
-    private ILookInteractable currentLookInteractable; // Объект для наведения
+    private IHoldInteractable currentHoldInteractable; // Текущий объект удержания
+
+    private ILookInteractable currentLookInteractable; // Текущий объект наведения
 
     private ILookInteractable previousLookInteractable; // Предыдущий объект наведения
 
@@ -30,9 +32,9 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
 
     private IHoldInteractable pressedHoldInteractable; // Объект удержания, на котором началось нажатие
 
-    private bool isPressing = false; // Нажата ли сейчас кнопка
+    private bool isPressing = false; // Нажата ли кнопка
 
-    private float pressTimer = 0f; // Время удержания кнопки
+    private float pressTimer = 0f; // Таймер удержания
 
     private void Start() // Запускается один раз
     {
@@ -43,7 +45,12 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
 
         if (playerHideController == null) // Если контроллер пряток не назначен
         {
-            playerHideController = GetComponent<PlayerHideController>(); // Ищем его на этом же объекте
+            playerHideController = GetComponent<PlayerHideController>(); // Ищем на этом объекте
+        }
+
+        if (objectGrabber == null && playerCamera != null) // Если ObjectGrabber не назначен
+        {
+            objectGrabber = playerCamera.GetComponent<ObjectGrabber>(); // Ищем ObjectGrabber на камере
         }
     }
 
@@ -53,79 +60,83 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
 
         HandleLook(); // Обрабатываем наведение
 
-        HandleInput(); // Обрабатываем короткое E и удержание E
+        HandleInput(); // Обрабатываем E
 
-        HandleHitInput(); // Обрабатываем удар мышкой
+        HandleHitInput(); // Обрабатываем удар
 
-        DrawDebugRay(); // Рисуем луч для проверки
+        DrawDebugRay(); // Рисуем debug-луч
     }
 
-    private void HandleInput() // Обработка короткого нажатия и удержания
+    private void HandleInput() // Обработка E
     {
-        if (Input.GetKeyDown(interactKey)) // Если игрок нажал E
+        if (Input.GetKeyDown(interactKey)) // Если нажали E
         {
-            isPressing = true; // Запоминаем, что кнопка нажата
+            isPressing = true; // Запоминаем нажатие
 
-            pressTimer = 0f; // Сбрасываем таймер удержания
+            pressTimer = 0f; // Сбрасываем таймер
 
-            if (playerHideController != null && playerHideController.isHidden) // Если игрок сейчас внутри шкафа
+            if (playerHideController != null && playerHideController.isHidden) // Если игрок спрятан
             {
-                pressedInteractable = null; // Короткое действие внутри шкафа не нужно
+                pressedInteractable = null; // Короткое действие не нужно
 
-                pressedHoldInteractable = playerHideController; // Удержание отправляем в PlayerHideController
+                pressedHoldInteractable = playerHideController; // Удержание отправляем в прятки
             }
             else // Если игрок не спрятан
             {
-                pressedInteractable = currentInteractable; // Запоминаем объект короткого действия
+                pressedInteractable = currentInteractable; // Запоминаем короткое взаимодействие
 
-                pressedHoldInteractable = currentHoldInteractable; // Запоминаем объект удержания
+                pressedHoldInteractable = currentHoldInteractable; // Запоминаем удержание
             }
         }
 
-        if (Input.GetKey(interactKey) && isPressing) // Если игрок держит E
+        if (Input.GetKey(interactKey) && isPressing) // Если удерживаем E
         {
-            pressTimer += Time.deltaTime; // Увеличиваем время удержания
+            pressTimer += Time.deltaTime; // Увеличиваем таймер
 
             if (pressedHoldInteractable != null) // Если есть объект удержания
             {
-                pressedHoldInteractable.HoldInteract(pressTimer); // Передаём ему время удержания
+                pressedHoldInteractable.HoldInteract(pressTimer); // Передаём время удержания
             }
         }
 
-        if (Input.GetKeyUp(interactKey) && isPressing) // Если игрок отпустил E
+        if (Input.GetKeyUp(interactKey) && isPressing) // Если отпустили E
         {
-            if (pressTimer <= shortClickMaxTime) // Если это короткий клик
+            if (pressTimer <= shortClickMaxTime) // Если это короткое нажатие
             {
-                if (pressedInteractable != null) // Если объект короткого действия есть
+                if (pressedInteractable != null) // Если есть обычный интерактив
                 {
-                    pressedInteractable.Interact(); // Выполняем короткое действие
+                    pressedInteractable.Interact(); // Вызываем взаимодействие
+                }
+                else if (objectGrabber != null) // Если обычного интерактива нет
+                {
+                    objectGrabber.Interact(); // Пробуем взять или отпустить предмет
                 }
             }
             else // Если это было удержание
             {
-                if (pressedHoldInteractable != null) // Если объект удержания есть
+                if (pressedHoldInteractable != null) // Если был объект удержания
                 {
-                    pressedHoldInteractable.HoldCancel(pressTimer); // Сообщаем, что удержание закончилось
+                    pressedHoldInteractable.HoldCancel(pressTimer); // Сообщаем отмену удержания
                 }
             }
 
-            isPressing = false; // Сбрасываем состояние кнопки
+            isPressing = false; // Сбрасываем состояние
 
             pressTimer = 0f; // Сбрасываем таймер
 
-            pressedInteractable = null; // Очищаем короткое действие
+            pressedInteractable = null; // Очищаем объект
 
-            pressedHoldInteractable = null; // Очищаем удержание
+            pressedHoldInteractable = null; // Очищаем объект удержания
         }
     }
 
-    private void HandleHitInput() // Метод обработки удара
+    private void HandleHitInput() // Обработка удара
     {
-        if (Input.GetKeyDown(hitKey)) // Если игрок нажал кнопку удара
+        if (Input.GetKeyDown(hitKey)) // Если нажали ЛКМ
         {
-            if (currentHitInteractable != null) // Если перед игроком есть объект, по которому можно ударить
+            if (currentHitInteractable != null) // Если объект можно ударить
             {
-                currentHitInteractable.Hit(); // Наносим удар по объекту
+                currentHitInteractable.Hit(); // Ударяем
             }
         }
     }
@@ -134,7 +145,7 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
     {
         currentInteractable = null; // Сбрасываем короткое взаимодействие
 
-        currentHitInteractable = null; // Сбрасываем объект удара
+        currentHitInteractable = null; // Сбрасываем удар
 
         currentHoldInteractable = null; // Сбрасываем удержание
 
@@ -144,17 +155,17 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
 
         if (playerHideController != null && playerHideController.isHidden) return; // Если игрок спрятан — луч наружу не нужен
 
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); // Создаём луч из камеры вперёд
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); // Луч из камеры
 
-        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactLayers, QueryTriggerInteraction.Collide)) // Если луч попал в объект
+        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactLayers, QueryTriggerInteraction.Collide)) // Пускаем луч
         {
-            currentInteractable = hit.collider.GetComponentInParent<IInteractable>(); // Ищем короткое взаимодействие
+            currentInteractable = hit.collider.GetComponentInParent<IInteractable>(); // Ищем IInteractable
 
-            currentHitInteractable = hit.collider.GetComponentInParent<IHitInteractable>(); // Ищем объект удара
+            currentHitInteractable = hit.collider.GetComponentInParent<IHitInteractable>(); // Ищем IHitInteractable
 
-            currentHoldInteractable = hit.collider.GetComponentInParent<IHoldInteractable>(); // Ищем удержание
+            currentHoldInteractable = hit.collider.GetComponentInParent<IHoldInteractable>(); // Ищем IHoldInteractable
 
-            currentLookInteractable = hit.collider.GetComponentInParent<ILookInteractable>(); // Ищем наведение
+            currentLookInteractable = hit.collider.GetComponentInParent<ILookInteractable>(); // Ищем ILookInteractable
         }
     }
 
@@ -164,7 +175,7 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
         {
             if (previousLookInteractable != null) // Если старый объект был
             {
-                previousLookInteractable.LookExit(); // Убираем наведение со старого объекта
+                previousLookInteractable.LookExit(); // Убираем наведение
             }
 
             previousLookInteractable = currentLookInteractable; // Запоминаем новый объект
@@ -176,11 +187,11 @@ public class PlayerInteractor : MonoBehaviour // Центральный скри
         }
     }
 
-    private void DrawDebugRay() // Рисуем отладочный луч
+    private void DrawDebugRay() // Рисует луч в Scene View
     {
         if (playerCamera == null) return; // Если камеры нет — выходим
 
-        if (playerHideController != null && playerHideController.isHidden) return; // В шкафу луч не рисуем
+        if (playerHideController != null && playerHideController.isHidden) return; // Если игрок спрятан — не рисуем
 
         Debug.DrawRay(playerCamera.transform.position, playerCamera.transform.forward * interactDistance, Color.green); // Рисуем зелёный луч
     }

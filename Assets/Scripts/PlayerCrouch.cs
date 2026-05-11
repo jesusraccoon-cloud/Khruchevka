@@ -26,35 +26,39 @@ public class PlayerCrouch : MonoBehaviour
             controller = GetComponent<CharacterController>(); // Берем CharacterController с этого же объекта
         }
 
+        if (controller == null) // Если CharacterController не найден
+        {
+            enabled = false; // Отключаем скрипт, чтобы не было NullReference
+            return; // Выходим из Start
+        }
+
         if (cameraRoot == null)
         {
-            Debug.LogError("PlayerCrouch: не назначен cameraRoot.");
-            return;
+            Debug.LogError("PlayerCrouch: не назначен cameraRoot."); // Показываем ошибку
+            enabled = false; // Отключаем скрипт, чтобы он не работал без камеры
+            return; // Выходим из Start
         }
 
         standingHeight = controller.height; // Запоминаем текущую высоту как высоту стоя
         standingCenter = controller.center; // Запоминаем текущий центр как центр стоя
 
-        // Считаем новый центр капсулы для приседа
         crouchingCenter = new Vector3(
             standingCenter.x,
             crouchHeight * 0.5f,
             standingCenter.z
-        );
+        ); // Считаем центр капсулы в приседе
 
-        standingCameraLocalPos = cameraRoot.localPosition; // Запоминаем текущую позицию камеры как позицию стоя
-        crouchingCameraLocalPos = standingCameraLocalPos - new Vector3(0f, crouchCameraOffset, 0f); // Опускаем камеру вниз для приседа
+        standingCameraLocalPos = cameraRoot.localPosition; // Запоминаем позицию камеры стоя
+        crouchingCameraLocalPos = standingCameraLocalPos - new Vector3(0f, crouchCameraOffset, 0f); // Считаем позицию камеры в приседе
     }
 
     private void Update()
     {
-        if (controller == null || cameraRoot == null) return;
-
         bool wantsToCrouch = Input.GetKey(crouchKey); // Пока держим Ctrl — сидим
 
-        float targetHeight = wantsToCrouch ? crouchHeight : standingHeight; // Целевая высота
-        Vector3 targetCenter = wantsToCrouch ? crouchingCenter : standingCenter; // Целевой центр
-        Vector3 targetCameraPos = wantsToCrouch ? crouchingCameraLocalPos : standingCameraLocalPos; // Целевая позиция камеры
+        float targetHeight = wantsToCrouch ? crouchHeight : standingHeight; // Выбираем целевую высоту
+        Vector3 targetCenter = wantsToCrouch ? crouchingCenter : standingCenter; // Выбираем целевой центр
+        Vector3 targetCameraPos = wantsToCrouch ? crouchingCameraLocalPos : standingCameraLocalPos; // Выбираем позицию камеры
 
         controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * crouchSpeed); // Плавно меняем высоту
         controller.center = Vector3.Lerp(controller.center, targetCenter, Time.deltaTime * crouchSpeed); // Плавно меняем центр

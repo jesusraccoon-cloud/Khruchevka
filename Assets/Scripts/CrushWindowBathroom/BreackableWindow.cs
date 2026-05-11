@@ -1,120 +1,76 @@
 using UnityEngine; // Подключаем Unity-классы
 using System.Collections; // Подключаем корутины
 
-public class BreakableWindow : MonoBehaviour, IHitInteractable
-// Скрипт разбиваемого окна
-// IHitInteractable позволяет PlayerInteractor наносить удары по окну
+public class BreakableWindow : MonoBehaviour, IHitInteractable // Окно получает удары от PlayerInteractor
 {
-    public GameObject windowIntact;
-    // Целое окно
+    public GameObject windowIntact; // Целая версия окна
+    public GameObject windowBroken; // Разбитая версия окна
 
-    public GameObject windowBroken;
-    // Разбитое окно
+    public int hitsToBreak = 3; // Сколько ударов нужно для разбития
+    public float hitDelay = 0.3f; // Задержка между ударами
 
-    public int hitsToBreak = 3;
-    // Сколько ударов нужно, чтобы разбить окно
+    private int currentHits = 0; // Текущее количество ударов
+    private bool isBroken = false; // Разбито ли окно
+    private bool canHit = true; // Можно ли сейчас ударить
 
-    public float hitDelay = 0.3f;
-    // Задержка между ударами, чтобы нельзя было спамить ЛКМ
-
-    private int currentHits = 0;
-    // Сколько ударов уже нанесено
-
-    private bool isBroken = false;
-    // Разбито окно или нет
-
-    private bool canHit = true;
-    // Можно ли сейчас наносить удар
-
-    public bool IsBroken
+    public bool IsBroken // Свойство для других скриптов
     {
-        get { return isBroken; }
+        get { return isBroken; } // Возвращаем состояние окна
     }
-    // Даём другим скриптам узнать, разбито окно или нет
 
-    void Start()
-    // Вызывается один раз при запуске сцены
+    void Start() // Вызывается при запуске сцены
     {
-        if (windowIntact != null)
-        // Если целое окно назначено
+        if (windowIntact != null) // Если целое окно назначено
         {
-            windowIntact.SetActive(true);
-            // Включаем целое окно
+            windowIntact.SetActive(true); // Показываем целое окно
         }
 
-        if (windowBroken != null)
-        // Если разбитое окно назначено
+        if (windowBroken != null) // Если разбитое окно назначено
         {
-            windowBroken.SetActive(false);
-            // Выключаем разбитое окно
+            windowBroken.SetActive(false); // Прячем разбитое окно
         }
     }
 
-    public void Hit()
-    // Метод вызывается PlayerInteractor при ударе ЛКМ
+    public void Hit() // Вызывается при ударе по окну
     {
-        if (isBroken) return;
-        // Если окно уже разбито — ничего не делаем
+        if (isBroken) return; // Если уже разбито — выходим
+        if (!canHit) return; // Если кулдаун не прошел — выходим
 
-        if (!canHit) return;
-        // Если задержка между ударами ещё не закончилась — выходим
+        currentHits++; // Добавляем один удар
 
-        currentHits++;
-        // Добавляем один удар
-
-        Debug.Log("Удар по окну: " + currentHits + " / " + hitsToBreak);
-        // Показываем прогресс ударов
-
-        if (currentHits >= hitsToBreak)
-        // Если ударов достаточно
+        if (currentHits >= hitsToBreak) // Если ударов достаточно
         {
-            Break();
-            // Разбиваем окно
+            Break(); // Разбиваем окно
         }
-        else
+        else // Если ударов пока недостаточно
         {
-            StartCoroutine(HitCooldown());
-            // Запускаем задержку до следующего удара
+            StartCoroutine(HitCooldown()); // Запускаем задержку до следующего удара
         }
     }
 
-    IEnumerator HitCooldown()
-    // Корутина задержки между ударами
+    IEnumerator HitCooldown() // Корутина задержки между ударами
     {
-        canHit = false;
-        // Временно запрещаем наносить удар
+        canHit = false; // Запрещаем новый удар
 
-        yield return new WaitForSeconds(hitDelay);
-        // Ждём указанное количество секунд
+        yield return new WaitForSeconds(hitDelay); // Ждем указанное время
 
-        canHit = true;
-        // Снова разрешаем удар
+        canHit = true; // Снова разрешаем удар
     }
 
-    void Break()
-    // Метод разбития окна
+    void Break() // Метод разбития окна
     {
-        if (isBroken) return;
-        // Если окно уже разбито — выходим
+        if (isBroken) return; // Если уже разбито — выходим
 
-        isBroken = true;
-        // Помечаем окно как разбитое
+        isBroken = true; // Помечаем окно как разбитое
 
-        Debug.Log("ОКНО РАЗБИТО!");
-        // Сообщение в Console
-
-        if (windowIntact != null)
-        // Если целое окно назначено
+        if (windowIntact != null) // Если целое окно назначено
         {
-            windowIntact.SetActive(false);
-            // Выключаем целое окно
+            windowIntact.SetActive(false); // Выключаем целое окно
         }
 
-        if (windowBroken != null)
-        // Если разбитое окно назначено
+        if (windowBroken != null) // Если разбитое окно назначено
         {
-            windowBroken.SetActive(true);
-            // Включаем разбитое окно
+            windowBroken.SetActive(true); // Включаем разбитое окно
         }
     }
 }

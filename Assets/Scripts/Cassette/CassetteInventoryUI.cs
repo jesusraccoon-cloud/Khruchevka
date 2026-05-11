@@ -1,68 +1,65 @@
-using UnityEngine; // Подключаем Unity
-using TMPro; // Подключаем TextMeshPro
+using UnityEngine; // Подключаем Unity-классы: MonoBehaviour, Debug, Mathf и другие
+using TMPro; // Подключаем TextMeshPro для работы с UI текстом
 
 public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчика кассет
 {
-    [Header("UI")]
-    public TextMeshProUGUI cassetteCounterText; // Ссылка на текст счетчика
+    [Header("UI")] // Заголовок секции UI в Inspector
+    public TextMeshProUGUI cassetteCounterText; // Ссылка на текст счетчика кассет
 
-    [Header("Settings")]
-    public int currentCassetteCount = 0; // Сколько кассет собрано
-    public int maxCassetteCount = 6; // Сколько всего кассет нужно собрать
+    [Header("Settings")] // Заголовок секции настроек
+    public int currentCassetteCount = 0; // Сколько кассет уже собрано
+    public int maxCassetteCount = 6; // Максимальное количество кассет
 
-    [Header("Monster")]
-    public MonsterPatrol monsterPatrol; // ссылка на монстра
+    [Header("Monster")] // Заголовок секции монстра
+    public MonsterPatrol monsterPatrol; // Ссылка на скрипт монстра
 
-    public int activateMonsterAt = 4; // при каком количестве кассет активируется монстр
+    public int activateMonsterAt = 4; // При каком количестве кассет запускать монстра
 
-    private bool monsterActivated = false; // чтобы не активировать несколько раз
+    private bool monsterActivated = false; // Защита от повторного запуска монстра
 
-    void Start()
+    void Start() // Вызывается один раз при старте сцены
     {
-        UpdateUI(); // Обновляем UI при старте
+        UpdateUI(); // Обновляем UI сразу после запуска сцены
     }
 
-    public void AddCassette()
+    public void AddCassette() // Метод добавления кассеты
     {
-        currentCassetteCount++; // Увеличиваем счетчик
+        // Увеличиваем количество кассет
+        // Mathf.Clamp не дает значению выйти за пределы
+        currentCassetteCount = Mathf.Clamp(currentCassetteCount + 1, 0, maxCassetteCount);
 
-        if (currentCassetteCount > maxCassetteCount) // Не даем уйти выше максимума
+        // Если монстр еще не активирован
+        // и количество кассет достигло нужного значения
+        if (!monsterActivated && currentCassetteCount >= activateMonsterAt)
         {
-            currentCassetteCount = maxCassetteCount;
+            ActivateMonster(); // Запускаем монстра
         }
 
-        // 🔥 ВАЖНО: проверка активации монстра
-        if (!monsterActivated && currentCassetteCount >= activateMonsterAt) // если еще не активировали и достигли нужного количества
-        {
-            ActivateMonster(); // запускаем монстра
-        }
-
-        UpdateUI(); // Обновляем текст
+        UpdateUI(); // Обновляем отображение счетчика
     }
 
-    void ActivateMonster()
+    void ActivateMonster() // Метод активации монстра
     {
-        monsterActivated = true; // помечаем, что уже активировали
+        monsterActivated = true; // Помечаем что монстр уже был активирован
 
-        if (monsterPatrol != null) // если ссылка есть
+        if (monsterPatrol != null) // Если ссылка на монстра назначена
         {
-            monsterPatrol.StartPatrol(); // включаем патруль
+            monsterPatrol.StartPatrol(); // Запускаем патрулирование монстра
         }
-        else
+        else // Если ссылка отсутствует
         {
-            Debug.LogWarning("MonsterPatrol не назначен"); // если забыли назначить
+            Debug.LogWarning("MonsterPatrol не назначен"); // Выводим предупреждение в Console
         }
     }
 
-    void UpdateUI()
+    void UpdateUI() // Метод обновления UI
     {
-        if (cassetteCounterText != null) // Если текст назначен
-        {
-            cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount; // Показываем счетчик
-        }
-        else
-        {
-            Debug.LogWarning(gameObject.name + ": cassetteCounterText НЕ назначен"); // Полезное предупреждение
-        }
+        // Если текст не назначен — выходим
+        // Это защищает от NullReference ошибки
+        if (cassetteCounterText == null) return;
+
+        // Обновляем текст счетчика
+        // Например: 2/6
+        cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount;
     }
 }

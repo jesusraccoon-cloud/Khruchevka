@@ -31,6 +31,5 @@ public class WindowExitInteract : MonoBehaviour, IInteractable // Скрипт �
 
         characterController.enabled = true; // Включаем CharacterController обратно
 
-        Debug.Log("Игрок вышел через окно"); // Пишем сообщение в Console
     }
 }

@@ -1,291 +1,184 @@
-using UnityEngine;
-// Подключаем библиотеку Unity, чтобы использовать камеру, физику, Rigidbody, Vector3 и другие функции
+using UnityEngine; // Подключаем Unity-классы
 
-public class ObjectGrabber : MonoBehaviour
-// Создаём класс ObjectGrabber, который будет висеть на игроке
+public class ObjectGrabber : MonoBehaviour // Скрипт захвата и движения предметов
 {
-    public Camera playerCamera;
-    // Камера игрока, из которой мы пускаем Raycast
+    public Camera playerCamera; // Камера игрока
 
-    public Transform holdPoint;
-    // Точка перед камерой, где будет держаться лёгкий предмет
+    public Transform holdPoint; // Точка удержания предмета перед камерой
 
-    public float grabDistance = 3f;
-    // Максимальная дистанция взаимодействия
+    public float grabDistance = 3f; // Дистанция захвата
 
-    public float moveSpeed = 10f;
-    // Скорость движения лёгкого предмета к holdPoint
+    public float moveSpeed = 10f; // Скорость движения лёгкого предмета
 
-    public float heavyMoveSpeed = 4f;
-    // Скорость движения тяжёлого объекта
+    public float heavyMoveSpeed = 4f; // Скорость движения тяжёлого предмета
 
-    public float heavyObjectDistance = 1.5f;
-    // Дистанция, на которой тяжёлый объект будет держаться перед игроком
+    public LayerMask grabbableLayer; // Слой лёгких предметов
 
-    public LayerMask grabbableLayer;
-    // Слой лёгких объектов, которые можно поднимать
+    public LayerMask movableHeavyLayer; // Слой тяжёлых предметов
 
-    public LayerMask movableHeavyLayer;
-    // Слой тяжёлых объектов, которые можно двигать
+    private Rigidbody grabbedRigidbody; // Текущий лёгкий предмет
 
-    private Rigidbody grabbedRigidbody;
-    // Rigidbody лёгкого объекта, который сейчас держит игрок
+    private Rigidbody movingHeavyRigidbody; // Текущий тяжёлый предмет
 
-    private Rigidbody movingHeavyRigidbody;
-    // Rigidbody тяжёлого объекта, который сейчас двигает игрок
+    private bool oldUseGravity; // Старое состояние гравитации лёгкого предмета
 
-    private bool oldUseGravity;
-    // Запоминаем, была ли включена гравитация у лёгкого объекта
+    private RigidbodyConstraints oldConstraints; // Старые ограничения лёгкого предмета
 
-    private RigidbodyConstraints oldConstraints;
-    // Запоминаем старые ограничения лёгкого объекта
+    private RigidbodyConstraints oldHeavyConstraints; // Старые ограничения тяжёлого предмета
 
-    private RigidbodyConstraints oldHeavyConstraints;
-    // Запоминаем старые ограничения тяжёлого объекта
-
-    void Update()
-    // Update вызывается каждый кадр
+    private void FixedUpdate() // Физическое обновление
     {
-        if (Input.GetKeyDown(KeyCode.E))
-        // Проверяем, нажал ли игрок кнопку E
+        if (grabbedRigidbody != null) // Если держим лёгкий предмет
         {
-            if (grabbedRigidbody == null && movingHeavyRigidbody == null)
-            // Если игрок сейчас ничего не держит и ничего не двигает
-            {
-                TryInteract();
-                // Пытаемся найти объект перед игроком
-            }
-            else
-            {
-                ReleaseLightObject();
-                // Отпускаем лёгкий объект, если он был в руках
+            HoldLightObject(); // Удерживаем предмет
+        }
 
-                StopMovingHeavyObject();
-                // Перестаём двигать тяжёлый объект, если он двигался
-            }
+        if (movingHeavyRigidbody != null) // Если двигаем тяжёлый предмет
+        {
+            MoveHeavyObject(); // Двигаем предмет
         }
     }
 
-    void FixedUpdate()
-    // FixedUpdate используется для физики
+    public void Interact() // Вызывается PlayerInteractor при коротком E
     {
-        if (grabbedRigidbody != null)
-        // Если игрок держит лёгкий объект
+        if (grabbedRigidbody == null && movingHeavyRigidbody == null) // Если ничего не держим
         {
-            HoldLightObject();
-            // Держим лёгкий объект перед камерой
+            TryInteract(); // Пытаемся взять или начать двигать объект
         }
-
-        if (movingHeavyRigidbody != null)
-        // Если игрок двигает тяжёлый объект
+        else // Если уже держим или двигаем
         {
-            MoveHeavyObject();
-            // Двигаем тяжёлый объект перед игроком
+            ReleaseLightObject(); // Отпускаем лёгкий объект
+
+            StopMovingHeavyObject(); // Останавливаем тяжёлый объект
         }
     }
 
-    void TryInteract()
-    // Метод, который проверяет, на что смотрит игрок
+    private void TryInteract() // Проверяет объект перед камерой
     {
-        RaycastHit hit;
-        // Переменная, куда попадёт информация о столкновении луча
+        if (playerCamera == null) return; // Если камера не назначена — выходим
 
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        // Создаём луч из камеры вперёд
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); // Луч из камеры
 
-        int interactMask = grabbableLayer.value | movableHeavyLayer.value;
-        // Объединяем два слоя: лёгкие предметы и тяжёлые предметы
+        int interactMask = grabbableLayer.value | movableHeavyLayer.value; // Объединяем слои
 
-        if (Physics.Raycast(ray, out hit, grabDistance, interactMask))
-        // Пускаем луч и проверяем, попал ли он в нужный слой
+        if (Physics.Raycast(ray, out RaycastHit hit, grabDistance, interactMask)) // Пускаем луч
         {
-            if (IsInLayerMask(hit.collider.gameObject.layer, movableHeavyLayer))
-            // Если объект находится на слое тяжёлых двигаемых объектов
+            if (IsInLayerMask(hit.collider.gameObject.layer, movableHeavyLayer)) // Если объект тяжёлый
             {
-                TryStartMovingHeavyObject(hit);
-                // Пытаемся начать двигать тяжёлый объект
+                TryStartMovingHeavyObject(hit); // Начинаем двигать тяжёлый объект
 
-                return;
-                // Выходим, чтобы не пытаться ещё и поднять его
+                return; // Выходим
             }
 
-            if (IsInLayerMask(hit.collider.gameObject.layer, grabbableLayer))
-            // Если объект находится на слое лёгких подбираемых объектов
+            if (IsInLayerMask(hit.collider.gameObject.layer, grabbableLayer)) // Если объект лёгкий
             {
-                TryGrabLightObject(hit);
-                // Пытаемся поднять лёгкий объект
+                TryGrabLightObject(hit); // Берём лёгкий объект
 
-                return;
-                // Выходим из метода
+                return; // Выходим
             }
         }
     }
 
-    void TryGrabLightObject(RaycastHit hit)
-    // Метод попытки поднять лёгкий объект
+    private void TryGrabLightObject(RaycastHit hit) // Пытается взять лёгкий объект
     {
-        Rigidbody rb = hit.collider.attachedRigidbody;
-        // Берём Rigidbody у объекта, в который попал луч
+        Rigidbody rb = hit.collider.attachedRigidbody; // Получаем Rigidbody
 
-        if (rb == null)
-        // Если Rigidbody нет
-        {
-            return;
-            // Выходим, потому что объект нельзя физически поднять
-        }
+        if (rb == null) return; // Если Rigidbody нет — выходим
 
-        grabbedRigidbody = rb;
-        // Запоминаем Rigidbody как текущий поднятый объект
+        grabbedRigidbody = rb; // Запоминаем предмет
 
-        oldUseGravity = grabbedRigidbody.useGravity;
-        // Запоминаем старое состояние гравитации
+        oldUseGravity = grabbedRigidbody.useGravity; // Запоминаем гравитацию
 
-        oldConstraints = grabbedRigidbody.constraints;
-        // Запоминаем старые ограничения Rigidbody
+        oldConstraints = grabbedRigidbody.constraints; // Запоминаем ограничения
 
-        grabbedRigidbody.useGravity = false;
-        // Отключаем гравитацию, чтобы предмет не падал
+        grabbedRigidbody.useGravity = false; // Отключаем гравитацию
 
-        grabbedRigidbody.velocity = Vector3.zero;
-        // Обнуляем скорость, чтобы не было рывка
+        grabbedRigidbody.velocity = Vector3.zero; // Обнуляем скорость
 
-        grabbedRigidbody.angularVelocity = Vector3.zero;
-        // Обнуляем вращение, чтобы предмет не крутился
+        grabbedRigidbody.angularVelocity = Vector3.zero; // Обнуляем вращение
 
-        grabbedRigidbody.constraints = RigidbodyConstraints.FreezeRotation;
-        // Замораживаем вращение предмета
+        grabbedRigidbody.constraints = RigidbodyConstraints.FreezeRotation; // Замораживаем вращение
     }
 
-    void HoldLightObject()
-    // Метод удержания лёгкого объекта
+    private void HoldLightObject() // Удерживает лёгкий предмет
     {
+        if (holdPoint == null) return; // Если точки удержания нет — выходим
+
         Vector3 newPosition = Vector3.Lerp(
             grabbedRigidbody.position,
             holdPoint.position,
             moveSpeed * Time.fixedDeltaTime
-        );
-        // Плавно считаем новую позицию между текущей позицией объекта и holdPoint
+        ); // Считаем плавную позицию
 
-        grabbedRigidbody.MovePosition(newPosition);
-        // Двигаем Rigidbody через физику
+        grabbedRigidbody.MovePosition(newPosition); // Двигаем предмет через физику
     }
 
-    void ReleaseLightObject()
-    // Метод отпускания лёгкого объекта
+    private void ReleaseLightObject() // Отпускает лёгкий предмет
     {
-        if (grabbedRigidbody == null)
-        // Если лёгкий объект не удерживается
-        {
-            return;
-            // Выходим
-        }
+        if (grabbedRigidbody == null) return; // Если предмета нет — выходим
 
-        grabbedRigidbody.useGravity = oldUseGravity;
-        // Возвращаем гравитацию как было
+        grabbedRigidbody.useGravity = oldUseGravity; // Возвращаем гравитацию
 
-        grabbedRigidbody.constraints = oldConstraints;
-        // Возвращаем старые ограничения Rigidbody
+        grabbedRigidbody.constraints = oldConstraints; // Возвращаем ограничения
 
-        grabbedRigidbody.velocity = Vector3.zero;
-        // Обнуляем скорость
+        grabbedRigidbody.velocity = Vector3.zero; // Обнуляем скорость
 
-        grabbedRigidbody.angularVelocity = Vector3.zero;
-        // Обнуляем вращение
+        grabbedRigidbody.angularVelocity = Vector3.zero; // Обнуляем вращение
 
-        grabbedRigidbody = null;
-        // Очищаем ссылку на объект
+        grabbedRigidbody = null; // Очищаем ссылку
     }
 
-    void TryStartMovingHeavyObject(RaycastHit hit)
-    // Метод попытки начать двигать тяжёлый объект
+    private void TryStartMovingHeavyObject(RaycastHit hit) // Начинает двигать тяжёлый объект
     {
-        Rigidbody rb = hit.collider.attachedRigidbody;
-        // Получаем Rigidbody тяжёлого объекта
+        Rigidbody rb = hit.collider.attachedRigidbody; // Получаем Rigidbody
 
-        if (rb == null)
-        // Если Rigidbody нет
-        {
-            return;
-            // Выходим, потому что двигать через физику нечего
-        }
+        if (rb == null) return; // Если Rigidbody нет — выходим
 
-        movingHeavyRigidbody = rb;
-        // Запоминаем Rigidbody тяжёлого объекта
+        movingHeavyRigidbody = rb; // Запоминаем тяжёлый объект
 
-        oldHeavyConstraints = movingHeavyRigidbody.constraints;
-        // Запоминаем старые ограничения тяжёлого объекта
+        oldHeavyConstraints = movingHeavyRigidbody.constraints; // Запоминаем ограничения
 
-        movingHeavyRigidbody.velocity = Vector3.zero;
-        // Обнуляем скорость тяжёлого объекта
+        movingHeavyRigidbody.velocity = Vector3.zero; // Обнуляем скорость
 
-        movingHeavyRigidbody.angularVelocity = Vector3.zero;
-        // Обнуляем вращение тяжёлого объекта
+        movingHeavyRigidbody.angularVelocity = Vector3.zero; // Обнуляем вращение
 
-        movingHeavyRigidbody.constraints = RigidbodyConstraints.FreezeRotation;
-        // Замораживаем вращение, чтобы шкаф/тумба не заваливались
+        movingHeavyRigidbody.constraints = RigidbodyConstraints.FreezeRotation; // Замораживаем вращение
     }
 
-    void MoveHeavyObject()
-// Метод движения тяжёлого объекта
-{
-    float input = Input.GetAxisRaw("Vertical");
-    // Читаем движение вперёд/назад:
-    // W = 1
-    // S = -1
-    // ничего не нажато = 0
-
-    if (input == 0)
-    // Если игрок не нажимает W или S
+    private void MoveHeavyObject() // Двигает тяжёлый объект
     {
-        return;
-        // Ничего не двигаем
+        if (playerCamera == null) return; // Если камеры нет — выходим
+
+        float input = Input.GetAxisRaw("Vertical"); // Читаем W/S
+
+        if (input == 0) return; // Если W/S не нажаты — выходим
+
+        Vector3 forward = playerCamera.transform.forward; // Берём направление камеры
+
+        forward.y = 0f; // Убираем вертикаль
+
+        forward.Normalize(); // Нормализуем направление
+
+        Vector3 newPosition = movingHeavyRigidbody.position + forward * input * heavyMoveSpeed * Time.fixedDeltaTime; // Считаем новую позицию
+
+        movingHeavyRigidbody.MovePosition(newPosition); // Двигаем через физику
     }
 
-    Vector3 forward = playerCamera.transform.forward;
-    // Берём направление взгляда камеры
-
-    forward.y = 0f;
-    // Убираем движение вверх/вниз
-
-    forward.Normalize();
-    // Нормализуем направление
-
-    Vector3 newPosition = movingHeavyRigidbody.position + forward * input * heavyMoveSpeed * Time.fixedDeltaTime;
-    // Считаем новую позицию:
-    // W двигает вперёд
-    // S двигает назад
-
-    movingHeavyRigidbody.MovePosition(newPosition);
-    // Двигаем Rigidbody через физику
-}
-
-    void StopMovingHeavyObject()
-    // Метод остановки движения тяжёлого объекта
+    private void StopMovingHeavyObject() // Останавливает тяжёлый объект
     {
-        if (movingHeavyRigidbody == null)
-        // Если тяжёлый объект не двигается
-        {
-            return;
-            // Выходим
-        }
+        if (movingHeavyRigidbody == null) return; // Если объекта нет — выходим
 
-        movingHeavyRigidbody.constraints = oldHeavyConstraints;
-        // Возвращаем старые ограничения Rigidbody
+        movingHeavyRigidbody.constraints = oldHeavyConstraints; // Возвращаем ограничения
 
-        movingHeavyRigidbody.velocity = Vector3.zero;
-        // Обнуляем скорость
+        movingHeavyRigidbody.velocity = Vector3.zero; // Обнуляем скорость
 
-        movingHeavyRigidbody.angularVelocity = Vector3.zero;
-        // Обнуляем вращение
+        movingHeavyRigidbody.angularVelocity = Vector3.zero; // Обнуляем вращение
 
-        movingHeavyRigidbody = null;
-        // Очищаем ссылку на тяжёлый объект
+        movingHeavyRigidbody = null; // Очищаем ссылку
     }
 
-    bool IsInLayerMask(int layer, LayerMask layerMask)
-    // Метод проверки: находится ли объект на нужном LayerMask
+    private bool IsInLayerMask(int layer, LayerMask layerMask) // Проверяет слой объекта
     {
-        return (layerMask.value & (1 << layer)) != 0;
-        // Возвращаем true, если слой объекта есть внутри LayerMask
+        return (layerMask.value & (1 << layer)) != 0; // Возвращает true, если слой есть в маске
     }
 }
