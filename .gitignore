@@ -6,6 +6,16 @@
 [Ll]ogs/
 UserSettings/
 
+MemoryCaptures/
+
+Assets/AssetStoreTools*
+
+.vs/
+.idea/
+.gradle/
+
+ExportedObj/
+
 *.csproj
 *.unityproj
 *.sln
@@ -17,6 +27,8 @@ UserSettings/
 *.booproj
 *.svd
 *.pdb
+*.mdb
+*.opendb
+*.VC.db
 
-.DS_Store
-Thumbs.db
+*.lscache
