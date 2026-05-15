@@ -1,35 +1,56 @@
 using UnityEngine; // Подключаем Unity-классы
 
-public class WindowExitInteract : MonoBehaviour, IInteractable // Скрипт выхода через разбитое окно
+public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт выхода через разбитое окно
 {
-    public BreakableWindow breakableWindow; // Ссылка на окно, которое должно быть разбито
+    public BreakableWindow breakableWindow; // Ссылка на разбиваемое окно
 
-    public Transform exitPoint; // Точка, куда нужно перенести игрока
+    public Transform exitPoint; // Точка, куда переносим игрока
 
-    public CharacterController characterController; // CharacterController игрока, обычно PlayerCapsule
+    public CharacterController characterController; // CharacterController игрока
 
-    public void Interact() // Метод вызывается PlayerInteractor при коротком нажатии E
+    [Header("Side Points")]
+    public Transform allowedPoint; // Точка со стороны, откуда можно использовать окно
+
+    public Transform blockedPoint; // Точка со стороны, откуда нельзя использовать окно
+
+    public void Interact() // Метод вызывается игроком через PlayerInteractor
     {
         if (breakableWindow == null) return; // Если окно не назначено — выходим
 
-        if (!breakableWindow.IsBroken) return; // Если окно ещё не разбито — выход запрещён
+        if (!breakableWindow.IsBroken) return; // Если окно не разбито — выходим
 
         if (exitPoint == null) return; // Если точка выхода не назначена — выходим
 
         if (characterController == null) return; // Если CharacterController не назначен — выходим
 
-        TeleportPlayer(); // Переносим игрока к ExitPoint
+        if (allowedPoint == null) return; // Если AllowedPoint не назначен — выходим
+
+        if (blockedPoint == null) return; // Если BlockedPoint не назначен — выходим
+
+        if (!IsPlayerOnAllowedSide()) return; // Если игрок не с разрешенной стороны — выходим
+
+        TeleportPlayer(); // Переносим игрока
     }
 
-    private void TeleportPlayer() // Метод безопасного переноса игрока
+    private bool IsPlayerOnAllowedSide() // Проверяем, находится ли игрок с разрешенной стороны
     {
-        characterController.enabled = false; // Отключаем CharacterController, чтобы он не мешал телепорту
+        Vector3 playerPosition = characterController.transform.position; // Берем позицию игрока
 
-        characterController.transform.position = exitPoint.position; // Переносим PlayerCapsule точно в позицию ExitPoint
+        float distanceToAllowed = Vector3.Distance(playerPosition, allowedPoint.position); // Расстояние до разрешенной точки
 
-        characterController.transform.rotation = exitPoint.rotation; // Поворачиваем PlayerCapsule как ExitPoint
+        float distanceToBlocked = Vector3.Distance(playerPosition, blockedPoint.position); // Расстояние до запрещенной точки
+
+        return distanceToAllowed < distanceToBlocked; // Разрешаем, если игрок ближе к AllowedPoint
+    }
+
+    private void TeleportPlayer() // Безопасный телепорт игрока
+    {
+        characterController.enabled = false; // Отключаем CharacterController перед телепортом
+
+        characterController.transform.position = exitPoint.position; // Переносим игрока в ExitPoint
+
+        characterController.transform.rotation = exitPoint.rotation; // Поворачиваем игрока как ExitPoint
 
         characterController.enabled = true; // Включаем CharacterController обратно
-
     }
 }
