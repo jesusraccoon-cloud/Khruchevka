@@ -1,65 +1,94 @@
-using UnityEngine; // Подключаем Unity-классы: MonoBehaviour, Debug, Mathf и другие
-using TMPro; // Подключаем TextMeshPro для работы с UI текстом
+using UnityEngine; // Подключаем Unity-классы
+using TMPro; // Подключаем TextMeshPro
 
 public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчика кассет
 {
-    [Header("UI")] // Заголовок секции UI в Inspector
-    public TextMeshProUGUI cassetteCounterText; // Ссылка на текст счетчика кассет
+    [Header("UI")] // Блок UI
+    public TextMeshProUGUI cassetteCounterText; // Текст счетчика кассет
 
-    [Header("Settings")] // Заголовок секции настроек
-    public int currentCassetteCount = 0; // Сколько кассет уже собрано
-    public int maxCassetteCount = 6; // Максимальное количество кассет
+    [Header("Settings")] // Блок настроек
+    public int currentCassetteCount = 0; // Текущее количество кассет
+    public int maxCassetteCount = 6; // Максимум кассет
 
-    [Header("Monster")] // Заголовок секции монстра
-    public MonsterPatrol monsterPatrol; // Ссылка на скрипт монстра
+    [Header("Monster")] // Блок монстра
+    public MonsterAI monsterAI; // Ссылка на главный скрипт монстра
 
-    public int activateMonsterAt = 4; // При каком количестве кассет запускать монстра
+    [Header("Hall Doors")] // Блок дверей в зал
+    public UniversalDoor[] hallDoors; // Массив дверей в зал
 
-    private bool monsterActivated = false; // Защита от повторного запуска монстра
+    [Header("Final Sequence")] // Блок финальной последовательности
+    public ApartmentFinalSequence finalSequence; // Ссылка на режиссёрский скрипт финала квартиры
 
-    void Start() // Вызывается один раз при старте сцены
+    public int activateMonsterAt = 4; // На какой кассете активировать монстра
+
+    private bool monsterActivated = false; // Защита от повторной активации монстра
+    private bool finalEventTriggered = false; // Защита от повторного запуска финального события
+
+    void Start() // При старте сцены
     {
-        UpdateUI(); // Обновляем UI сразу после запуска сцены
+        UpdateUI(); // Обновляем UI
     }
 
-    public void AddCassette() // Метод добавления кассеты
+    public void AddCassette() // Добавить кассету
     {
-        // Увеличиваем количество кассет
-        // Mathf.Clamp не дает значению выйти за пределы
-        currentCassetteCount = Mathf.Clamp(currentCassetteCount + 1, 0, maxCassetteCount);
+        currentCassetteCount = Mathf.Clamp(currentCassetteCount + 1, 0, maxCassetteCount); // Увеличиваем счетчик и не даём выйти за максимум
 
-        // Если монстр еще не активирован
-        // и количество кассет достигло нужного значения
-        if (!monsterActivated && currentCassetteCount >= activateMonsterAt)
+        if (!monsterActivated && currentCassetteCount >= activateMonsterAt) // Если монстр ещё не активирован и собрано 4+ кассеты
         {
-            ActivateMonster(); // Запускаем монстра
+            ActivateMonster(); // Активируем монстра и открываем доступ в зал
         }
 
-        UpdateUI(); // Обновляем отображение счетчика
+        if (!finalEventTriggered && currentCassetteCount >= maxCassetteCount) // Если финал ещё не запущен и собраны все кассеты
+        {
+            TriggerFinalEvent(); // Запускаем финальную последовательность
+        }
+
+        UpdateUI(); // Обновляем текст счетчика
     }
 
     void ActivateMonster() // Метод активации монстра
     {
-        monsterActivated = true; // Помечаем что монстр уже был активирован
+        monsterActivated = true; // Запоминаем, что монстр уже включён
 
-        if (monsterPatrol != null) // Если ссылка на монстра назначена
+        if (monsterAI != null) // Если ссылка на MonsterAI назначена
         {
-            monsterPatrol.StartPatrol(); // Запускаем патрулирование монстра
+            monsterAI.ActivateMonster(); // Включаем MonsterAI
         }
-        else // Если ссылка отсутствует
+        else // Если ссылка на MonsterAI не назначена
         {
-            Debug.LogWarning("MonsterPatrol не назначен"); // Выводим предупреждение в Console
+            Debug.LogWarning("MonsterAI не назначен в CassetteInventoryUI"); // Пишем предупреждение в Console
+        }
+
+        if (hallDoors != null) // Если массив дверей существует
+        {
+            foreach (UniversalDoor door in hallDoors) // Проходим по каждой двери в массиве
+            {
+                if (door != null) // Если конкретная дверь назначена
+                {
+                    door.isLocked = false; // Разблокируем эту дверь
+                }
+            }
         }
     }
 
-    void UpdateUI() // Метод обновления UI
+    void TriggerFinalEvent() // Метод запуска финального события
     {
-        // Если текст не назначен — выходим
-        // Это защищает от NullReference ошибки
-        if (cassetteCounterText == null) return;
+        finalEventTriggered = true; // Запоминаем, что финал уже был запущен
 
-        // Обновляем текст счетчика
-        // Например: 2/6
-        cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount;
+        if (finalSequence != null) // Если режиссёр финала назначен
+        {
+            finalSequence.StartFinalSequence(); // Запускаем финальную последовательность квартиры
+        }
+        else // Если ссылка не назначена
+        {
+            Debug.LogWarning("ApartmentFinalSequence не назначен в CassetteInventoryUI"); // Пишем предупреждение в Console
+        }
+    }
+
+    void UpdateUI() // Обновление UI
+    {
+        if (cassetteCounterText == null) return; // Если текста нет — выходим
+
+        cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount; // Показываем 0/6, 1/6 и т.д.
     }
 }

@@ -1,106 +1,204 @@
-using UnityEngine;
-using UnityEngine.AI;
+using UnityEngine; // Подключаем основные функции Unity
+using UnityEngine.AI; // Подключаем NavMeshAgent
 
-public class MonsterAI : MonoBehaviour
+public class MonsterAI : MonoBehaviour // Главный скрипт монстра
 {
-    public NavMeshAgent agent; // движение монстра
+    public NavMeshAgent agent; // Ссылка на NavMeshAgent
+    public Transform player; // Ссылка на игрока
+    public PlayerHideController playerHide; // Ссылка на систему пряток
+    public MonsterPatrol patrol; // Ссылка на патруль
 
-    public Transform player; // игрок
-    public PlayerHideController playerHide; // чтобы знать спрятан ли игрок
+    [Header("Activation")] // Блок активации
+    public bool isActivated = false; // Активен ли монстр
 
-    public MonsterPatrol patrol; // твой патруль
+    [Header("Vision")] // Блок зрения
+    public float viewDistance = 8f; // Дистанция зрения
+    public float viewAngle = 60f; // Угол зрения
+    public LayerMask obstacleMask; // Слой препятствий
 
-    public float viewDistance = 8f; // дистанция зрения
-    public float viewAngle = 60f;  // угол зрения
+    [Header("Lose Player")] // Блок потери игрока
+    public float loseTime = 3f; // Через сколько секунд монстр теряет игрока
 
-    public LayerMask obstacleMask; // слой стен
+    [Header("Door Opening")] // Блок дверей
+    public float doorCheckDistance = 1.8f; // Дистанция проверки двери
+    public LayerMask doorLayers = ~0; // Слой дверей
 
-    private Vector3 lastSeenPosition; // последняя позиция игрока
+    [Header("Noise Investigation")] // Блок исследования шума
+    public float noiseArriveDistance = 1.2f; // На каком расстоянии считать, что монстр дошёл до шума
+    public float noiseWaitTime = 4f; // Сколько секунд монстр стоит на месте шума
 
-    private float loseTimer = 0f; // таймер потери игрока
-    public float loseTime = 3f;   // через сколько забываем игрока
+    private Vector3 lastSeenPosition; // Последняя позиция игрока
+    private Vector3 noisePosition; // Позиция последнего шума
 
-    private bool isChasing = false; // сейчас преследуем?
+    private float loseTimer = 0f; // Таймер потери игрока
+    private float noiseWaitTimer = 0f; // Таймер ожидания на месте шума
 
-    void Update()
+    private bool isChasing = false; // Идёт ли погоня
+    private bool isInvestigatingNoise = false; // Исследует ли монстр шум
+    private bool isWaitingAtNoise = false; // Стоит ли монстр уже на месте шума
+
+    void Update() // Каждый кадр
     {
-        Debug.Log("MonsterAI работает");
-        if (CanSeePlayer()) // если видим игрока
+        if (!isActivated) // Если монстр не активирован
         {
-            StartChase();
-        }
-        else
-        {
-            StopChaseLogic();
+            if (patrol != null) patrol.isPatrolActive = false; // Выключаем патруль
+            if (agent != null) agent.ResetPath(); // Останавливаем агента
+            return; // Выходим, монстр ничего не делает
         }
 
-        if (isChasing) // если в режиме погони
+        TryOpenDoorAhead(); // Проверяем дверь перед монстром
+
+        if (CanSeePlayer()) // Если монстр видит игрока
         {
-            agent.SetDestination(player.position); // идём за игроком
+            StartChase(); // Начинаем погоню
+        }
+        else if (isChasing) // Если игрока не видно, но погоня была
+        {
+            StopChaseLogic(); // Пытаемся потерять игрока
+        }
+        else if (isInvestigatingNoise) // Если монстр сейчас идёт на шум
+        {
+            HandleNoiseInvestigation(); // Обрабатываем режим шума
+        }
+
+        if (isChasing) // Если идёт погоня
+        {
+            agent.SetDestination(player.position); // Идём за игроком
         }
     }
 
-    bool CanSeePlayer() // функция проверяет: видит ли монстр игрока
-{
-    if (playerHide != null && playerHide.isHidden) return false;
-    // если у нас есть ссылка на систему пряток И игрок сейчас спрятан → сразу "не видим"
-
-    float distance = Vector3.Distance(transform.position, player.position);
-    // считаем расстояние от монстра до игрока
-
-    if (distance > viewDistance) return false;
-    // если игрок дальше, чем дистанция обзора → не видим
-
-    Vector3 directionToPlayer = (player.position - transform.position).normalized;
-    // считаем направление от монстра к игроку и нормализуем (получаем вектор длиной 1)
-
-    float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer);
-    // считаем угол между тем, куда смотрит монстр, и направлением на игрока
-
-    if (angleToPlayer > viewAngle * 0.5f) return false;
-    // если игрок вне угла обзора (например, сзади) → не видим
-
-    if (Physics.Raycast(transform.position + Vector3.up, directionToPlayer, out RaycastHit hit, viewDistance))
+    bool CanSeePlayer() // Проверка видимости игрока
     {
-        // пускаем луч от "глаз" монстра (чуть выше центра), в сторону игрока
+        if (!isActivated) return false; // Спящий монстр не видит игрока
+        if (player == null) return false; // Если игрок не назначен — не видим
+        if (playerHide != null && playerHide.isHidden) return false; // Если игрок спрятан — не видим
 
-        if (!hit.transform.IsChildOf(player) && hit.transform != player)
+        float distance = Vector3.Distance(transform.position, player.position); // Считаем дистанцию
+
+        if (distance > viewDistance) return false; // Если далеко — не видим
+
+        Vector3 directionToPlayer = (player.position - transform.position).normalized; // Направление к игроку
+        float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer); // Угол до игрока
+
+        if (angleToPlayer > viewAngle * 0.5f) return false; // Если игрок вне угла зрения — не видим
+
+        Vector3 rayStart = transform.position + Vector3.up * 1.4f; // Точка начала луча
+
+        if (Physics.Raycast(rayStart, directionToPlayer, out RaycastHit hit, viewDistance)) // Пускаем луч
         {
-            // если луч упёрся НЕ в игрока (например, в стену)
-            return false; // значит между вами есть препятствие → не видим
+            if (!hit.transform.IsChildOf(player) && hit.transform != player) // Если луч попал не в игрока
+                return false; // Между монстром и игроком препятствие
+        }
+
+        return true; // Игрок виден
+    }
+
+    void StartChase() // Начать погоню
+    {
+        isChasing = true; // Включаем погоню
+        isInvestigatingNoise = false; // Выключаем исследование шума
+        isWaitingAtNoise = false; // Выключаем ожидание на шуме
+
+        loseTimer = 0f; // Сбрасываем таймер потери
+        lastSeenPosition = player.position; // Запоминаем позицию игрока
+
+        if (patrol != null) patrol.isPatrolActive = false; // Отключаем патруль
+    }
+
+    void StopChaseLogic() // Логика потери игрока
+    {
+        loseTimer += Time.deltaTime; // Увеличиваем таймер
+
+        if (loseTimer < loseTime) // Пока монстр ещё помнит игрока
+        {
+            agent.SetDestination(lastSeenPosition); // Идём к последней позиции игрока
+        }
+        else // Если игрок потерян
+        {
+            isChasing = false; // Выключаем погоню
+            if (patrol != null) patrol.StartPatrol(); // Возвращаем патруль
         }
     }
 
-    return true;
-    // если прошли все проверки → игрок виден
+    public void HearNoise(Vector3 newNoisePosition) // Метод реакции на шум
+    {
+        if (!isActivated) return; // Если монстр спит — игнорирует шум
+        if (isChasing) return; // Если монстр уже гонится за игроком — шум его не отвлекает
+
+        noisePosition = newNoisePosition; // Запоминаем позицию шума
+        isInvestigatingNoise = true; // Включаем режим исследования шума
+        isWaitingAtNoise = false; // Пока ещё не ждём, сначала надо дойти
+        noiseWaitTimer = 0f; // Сбрасываем таймер ожидания
+
+        if (patrol != null) patrol.isPatrolActive = false; // Отключаем патруль
+
+        agent.SetDestination(noisePosition); // Отправляем монстра к месту шума
+    }
+
+    void HandleNoiseInvestigation() // Логика исследования шума
+    {
+        if (agent.pathPending) return; // Если путь ещё строится — ждём
+
+        if (!isWaitingAtNoise) // Если монстр ещё идёт к шуму
+        {
+            if (agent.remainingDistance <= agent.stoppingDistance + noiseArriveDistance) // Если дошёл
+            {
+                isWaitingAtNoise = true; // Включаем ожидание на месте
+                noiseWaitTimer = 0f; // Сбрасываем таймер ожидания
+                agent.ResetPath(); // Останавливаем монстра
+            }
+        }
+        else // Если монстр уже стоит на месте шума
+        {
+            noiseWaitTimer += Time.deltaTime; // Считаем время ожидания
+
+            if (noiseWaitTimer >= noiseWaitTime) // Если подождал достаточно
+            {
+                isInvestigatingNoise = false; // Выключаем режим шума
+                isWaitingAtNoise = false; // Выключаем ожидание
+
+                if (patrol != null) patrol.StartPatrol(); // Возвращаем патруль
+            }
+        }
+    }
+
+    void TryOpenDoorAhead() // Проверка двери перед монстром
+    {
+        if (!isActivated) return; // Если монстр спит — двери не открывает
+
+        Vector3 checkCenter = transform.position + transform.forward * 1.2f + Vector3.up * 1.0f; // Центр проверки двери
+
+        Debug.DrawRay(transform.position + Vector3.up * 1.0f, transform.forward * 1.5f, Color.red); // Красный луч для отладки
+
+        Collider[] hits = Physics.OverlapSphere(checkCenter, 0.6f, doorLayers); // Ищем двери рядом
+
+        foreach (Collider hit in hits) // Перебираем найденные коллайдеры
+        {
+            UniversalDoor door = hit.GetComponentInParent<UniversalDoor>(); // Ищем UniversalDoor
+
+            if (door != null) // Если дверь найдена
+            {
+                door.OpenDoorForMonster(); // Открываем дверь
+                return; // Выходим
+            }
+        }
+    }
+
+    public void ActivateMonster() // Активация монстра
+{
+    if (!gameObject.activeInHierarchy) return; // Если объект Monster выключен в Hierarchy — ничего не делаем
+
+    if (agent == null) return; // Если NavMeshAgent не назначен — выходим
+
+    if (!agent.isActiveAndEnabled) return; // Если NavMeshAgent выключен — выходим
+
+    if (!agent.isOnNavMesh) return; // Если монстр не стоит на NavMesh — не запускаем патруль
+
+    isActivated = true; // Включаем монстра
+
+    if (patrol != null) // Если патруль назначен
+    {
+        patrol.StartPatrol(); // Запускаем патруль
+    }
 }
-
-    void StartChase()
-    {
-        isChasing = true; // включаем погоню
-
-        loseTimer = 0f; // сбрасываем таймер
-
-        lastSeenPosition = player.position; // запоминаем позицию
-
-        patrol.isPatrolActive = false; // выключаем патруль
-    }
-
-    void StopChaseLogic()
-    {
-        if (!isChasing) return;
-
-        loseTimer += Time.deltaTime; // считаем время потери
-
-        if (loseTimer < loseTime)
-        {
-            agent.SetDestination(lastSeenPosition); // идём к последнему месту
-        }
-        else
-        {
-            isChasing = false; // выключаем погоню
-
-            patrol.isPatrolActive = true; // возвращаем патруль
-        }
-    }
 }

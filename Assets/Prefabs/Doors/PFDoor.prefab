@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5995666565675111913}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleGripPivotIn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4462690360421362378}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -80,7 +80,7 @@ GameObject:
   - component: {fileID: 1099706984915591938}
   - component: {fileID: 2732380356552068016}
   - component: {fileID: 566853725974089087}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Door
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -467,15 +467,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isOpen: 0
   openDirection: 0
+  rotationAxis: 1
   openAngle: 90
   openSpeed: 1
   closeSpeed: 1
-  interactDistance: 1.5
-  interactKey: 101
-  interactLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  defaultOpener: {fileID: 0}
   handleInteractZone: {fileID: 5500941402102928228}
   outsideHandle: {fileID: 4043610340707980226}
   insideHandle: {fileID: 5995666565675111913}
@@ -485,6 +480,8 @@ MonoBehaviour:
   handleHoldTime: 0.05
   doorOpenDelay: 0.03
   canMonsterOpen: 1
+  requiresTumbler: 0
+  requiredTumbler: {fileID: 0}
 --- !u!1 &3831471777225343329
 GameObject:
   m_ObjectHideFlags: 0
@@ -499,7 +496,7 @@ GameObject:
   - component: {fileID: 3525016088750476148}
   - component: {fileID: 6930267075971093002}
   - component: {fileID: 6312293977359563188}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleGrip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -847,7 +844,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6196443370900689271}
   - component: {fileID: 5500941402102928228}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleInteractZone
   m_TagString: DoorHandle
   m_Icon: {fileID: 0}
@@ -899,7 +896,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7952688226948630325}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleOutside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -937,7 +934,7 @@ GameObject:
   - component: {fileID: 4749527303122479056}
   - component: {fileID: 7115327862551791050}
   - component: {fileID: 4019237638279607413}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1289,7 +1286,7 @@ GameObject:
   - component: {fileID: 7697056632804127062}
   - component: {fileID: 5665310304570716396}
   - component: {fileID: 4041998800311228216}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleShaft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1672,7 +1669,7 @@ GameObject:
   - component: {fileID: 7917624901063365803}
   - component: {fileID: 5891194961941193039}
   - component: {fileID: 7281603955912728124}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleGrip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2019,7 +2016,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4043610340707980226}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleGripPivotOut
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2084,7 +2081,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6225453684431864593}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleInside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2122,7 +2119,7 @@ GameObject:
   - component: {fileID: 5901642765321462083}
   - component: {fileID: 6456749204939374756}
   - component: {fileID: 8392577747731079800}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: HandleBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}

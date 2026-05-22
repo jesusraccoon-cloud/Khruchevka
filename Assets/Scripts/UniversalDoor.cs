@@ -52,6 +52,8 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
 
     [Header("Monster Access")] // Заголовок блока доступа монстра
     public bool canMonsterOpen = true; // Может ли монстр открыть эту дверь
+    [Header("Lock")]
+    public bool isLocked = false; //тру нельзя открыть, фальс можно
 
     [Header("Tumbler Lock")] // Заголовок блока связи двери с тумблером
     public bool requiresTumbler = false; // Нужно ли, чтобы тумблер был включен для открытия двери
@@ -129,6 +131,7 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
     public void Interact() // Метод вызывается PlayerInteractor при нажатии E
 {
     if (isBusy) return; // Если дверь сейчас занята анимацией — ничего не делаем
+    if (isLocked) return;
 
     if (!isOpen) // Если дверь закрыта
     {
