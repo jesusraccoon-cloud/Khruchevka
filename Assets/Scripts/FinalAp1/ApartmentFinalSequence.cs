@@ -5,6 +5,10 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     [Header("Final Objects")] // Блок объектов финального события
     public GameObject fallenWardrobe; // Упавший шкаф, который включится после сбора всех кассет
 
+    [Header("Room 1 Door Break")] // Блок визуальной поломки двери комнаты 1
+    public GameObject normalRoomDoor; // Обычная дверь комнаты 1, которая исчезнет после 6/6 кассет
+    public GameObject brokenDoorOnFloor; // Выбитая дверь на полу, которая появится после 6/6 кассет
+
     [Header("Monster")] // Блок монстра
     public GameObject monsterObject; // Сам объект монстра в сцене
     public MonsterAI monsterAI; // Главный AI монстра
@@ -13,7 +17,6 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public Transform monsterExitBlockPoint; // Точка у выхода, куда монстр переместится для блокировки пути игроку
 
     [Header("Triggers")] // Блок финальных триггеров
-    public GameObject exitBlockTrigger; // Триггер сцены у выхода
     public GameObject hallReturnDeathTrigger; // Триггер смерти при попытке вернуться в зал
     public GameObject kitchenFinalTrigger; // Триггер кухни для финальной сцены
 
@@ -31,19 +34,14 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
             fallenWardrobe.SetActive(true); // Включаем упавший шкаф
         }
 
-        if (monsterPatrol != null) // Если патруль монстра назначен
+        if (normalRoomDoor != null) // Если обычная дверь комнаты назначена
         {
-            monsterPatrol.isPatrolActive = false; // Останавливаем обычный патруль
+            normalRoomDoor.SetActive(false); // Прячем обычную дверь
         }
 
-        if (monsterAI != null) // Если AI монстра назначен
+        if (brokenDoorOnFloor != null) // Если выбитая дверь на полу назначена
         {
-            monsterAI.isActivated = false; // Временно выключаем обычный AI
-        }
-
-        if (exitBlockTrigger != null) // Если триггер выхода назначен
-        {
-            exitBlockTrigger.SetActive(true); // Включаем триггер у выхода
+            brokenDoorOnFloor.SetActive(true); // Показываем выбитую дверь на полу
         }
 
         if (hallReturnDeathTrigger != null) // Если триггер смерти назначен
@@ -55,6 +53,8 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         {
             kitchenFinalTrigger.SetActive(true); // Включаем кухонный триггер
         }
+
+        BlockExitWithMonster(); // Сразу ставим монстра у выхода после сбора всех кассет
 
         Debug.Log("Финальная последовательность квартиры запущена"); // Сообщение в Console
     }
