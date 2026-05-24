@@ -9,6 +9,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public GameObject normalRoomDoor; // Обычная дверь комнаты 1, которая исчезнет после 6/6 кассет
     public GameObject brokenDoorOnFloor; // Выбитая дверь на полу, которая появится после 6/6 кассет
 
+    [Header("Bathroom Door")] // Блок двери ванной
+    public UniversalDoor bathroomDoor; // Дверь ванной, которая заблокируется после 6/6 кассет
+
     [Header("Monster")] // Блок монстра
     public GameObject monsterObject; // Сам объект монстра в сцене
     public MonsterAI monsterAI; // Главный AI монстра
@@ -20,6 +23,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public GameObject hallReturnDeathTrigger; // Триггер смерти при попытке вернуться в зал
     public GameObject kitchenFinalTrigger; // Триггер кухни для финальной сцены
 
+    [HideInInspector] // Прячем переменную из Inspector, чтобы случайно не менять её руками
+    public bool finalSequenceStarted = false; // Началась ли финальная фаза квартиры
+
     private bool finalStarted = false; // Защита от повторного запуска финала
     private bool exitBlocked = false; // Защита от повторной блокировки выхода
 
@@ -28,6 +34,8 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (finalStarted) return; // Если финал уже запускался — выходим
 
         finalStarted = true; // Запоминаем, что финал начался
+
+        finalSequenceStarted = true; // Сообщаем другим скриптам, что финальная фаза началась
 
         if (fallenWardrobe != null) // Если упавший шкаф назначен
         {
@@ -42,6 +50,13 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (brokenDoorOnFloor != null) // Если выбитая дверь на полу назначена
         {
             brokenDoorOnFloor.SetActive(true); // Показываем выбитую дверь на полу
+        }
+
+        if (bathroomDoor != null) // Если дверь ванной назначена
+        {
+            bathroomDoor.CloseDoor(); // Закрываем дверь ванной
+            bathroomDoor.isLocked = true; // Блокируем дверь ванной
+            bathroomDoor.canMonsterOpen = false; // Запрещаем монстру открывать дверь ванной
         }
 
         if (hallReturnDeathTrigger != null) // Если триггер смерти назначен
