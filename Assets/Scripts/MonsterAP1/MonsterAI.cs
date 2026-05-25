@@ -37,6 +37,10 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
     private bool isInvestigatingNoise = false; // Исследует ли монстр шум
     private bool isWaitingAtNoise = false; // Стоит ли монстр уже на месте шума
 
+    private bool isGoingToPoint = false; // Идёт ли монстр к специальной точке
+    private bool isStandingAtSpecialPoint = false; // Стоит ли монстр на специальной точке
+    private Transform specialTargetPoint; // Точка, куда монстр должен прийти и остановиться
+
     void Update() // Каждый кадр
     {
         if (!isActivated) // Если монстр не активирован
@@ -44,6 +48,34 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
             if (patrol != null) patrol.isPatrolActive = false; // Выключаем патруль
             if (agent != null) agent.ResetPath(); // Останавливаем агента
             return; // Выходим, монстр ничего не делает
+        }
+
+        if (isStandingAtSpecialPoint) // Если монстр должен стоять на специальной точке
+        {
+            if (agent != null) agent.ResetPath(); // Не даём агенту снова идти
+
+            return; // Обычный AI не выполняем
+        }
+
+        if (isGoingToPoint) // Если монстр идёт к специальной точке
+        {
+            TryOpenDoorAhead(); // Позволяем монстру открывать двери по пути
+
+            if (!agent.pathPending) // Если путь уже построен
+            {
+                if (agent.remainingDistance <= agent.stoppingDistance + 0.4f) // Если монстр почти дошёл
+                {
+                    agent.ResetPath(); // Останавливаем монстра
+
+                    isGoingToPoint = false; // Выключаем режим движения к точке
+
+                    isStandingAtSpecialPoint = true; // Включаем режим постоянного стояния
+
+                    Debug.Log("Монстр дошёл до специальной точки и остался стоять"); // Сообщение в Console
+                }
+            }
+
+            return; // Пока идём к точке, обычный AI не выполняется
         }
 
         TryOpenDoorAhead(); // Проверяем дверь перед монстром
@@ -98,6 +130,8 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
         isChasing = true; // Включаем погоню
         isInvestigatingNoise = false; // Выключаем исследование шума
         isWaitingAtNoise = false; // Выключаем ожидание на шуме
+        isGoingToPoint = false; // Выключаем движение к специальной точке
+        isStandingAtSpecialPoint = false; // Снимаем режим стояния, если началась обычная погоня
 
         loseTimer = 0f; // Сбрасываем таймер потери
         lastSeenPosition = player.position; // Запоминаем позицию игрока
@@ -124,6 +158,8 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
     {
         if (!isActivated) return; // Если монстр спит — игнорирует шум
         if (isChasing) return; // Если монстр уже гонится за игроком — шум его не отвлекает
+        if (isGoingToPoint) return; // Если монстр идёт к специальной точке — шум его не отвлекает
+        if (isStandingAtSpecialPoint) return; // Если монстр стоит на специальной точке — шум его не отвлекает
 
         noisePosition = newNoisePosition; // Запоминаем позицию шума
         isInvestigatingNoise = true; // Включаем режим исследования шума
@@ -184,21 +220,47 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
         }
     }
 
-    public void ActivateMonster() // Активация монстра
-{
-    if (!gameObject.activeInHierarchy) return; // Если объект Monster выключен в Hierarchy — ничего не делаем
-
-    if (agent == null) return; // Если NavMeshAgent не назначен — выходим
-
-    if (!agent.isActiveAndEnabled) return; // Если NavMeshAgent выключен — выходим
-
-    if (!agent.isOnNavMesh) return; // Если монстр не стоит на NavMesh — не запускаем патруль
-
-    isActivated = true; // Включаем монстра
-
-    if (patrol != null) // Если патруль назначен
+    public void GoToPointAndStop(Transform targetPoint) // Отправить монстра к точке и остановить там
     {
-        patrol.StartPatrol(); // Запускаем патруль
+        if (targetPoint == null) return; // Если точка не назначена — выходим
+        if (agent == null) return; // Если агент не назначен — выходим
+        if (!agent.isActiveAndEnabled) return; // Если агент выключен — выходим
+        if (!agent.isOnNavMesh) return; // Если монстр не стоит на NavMesh — выходим
+
+        isActivated = true; // Включаем AI, чтобы Update начал работать
+
+        isGoingToPoint = true; // Включаем специальный режим движения
+
+        isStandingAtSpecialPoint = false; // Сбрасываем режим стояния
+
+        specialTargetPoint = targetPoint; // Запоминаем точку назначения
+
+        isChasing = false; // Выключаем погоню
+        isInvestigatingNoise = false; // Выключаем расследование шума
+        isWaitingAtNoise = false; // Выключаем ожидание на шуме
+
+        if (patrol != null) // Если патруль назначен
+        {
+            patrol.isPatrolActive = false; // Выключаем патруль
+        }
+
+        agent.SetDestination(specialTargetPoint.position); // Отправляем монстра к точке
+
+        Debug.Log("Монстр пошёл к специальной точке"); // Сообщение в Console
     }
-}
+
+    public void ActivateMonster() // Активация монстра
+    {
+        if (!gameObject.activeInHierarchy) return; // Если объект Monster выключен в Hierarchy — ничего не делаем
+        if (agent == null) return; // Если NavMeshAgent не назначен — выходим
+        if (!agent.isActiveAndEnabled) return; // Если NavMeshAgent выключен — выходим
+        if (!agent.isOnNavMesh) return; // Если монстр не стоит на NavMesh — не запускаем патруль
+
+        isActivated = true; // Включаем монстра
+
+        if (patrol != null) // Если патруль назначен
+        {
+            patrol.StartPatrol(); // Запускаем патруль
+        }
+    }
 }
