@@ -6,25 +6,28 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public GameObject fallenWardrobe; // Упавший шкаф, который включится после сбора всех кассет
 
     [Header("Room 1 Door Break")] // Блок визуальной поломки двери комнаты 1
-    public GameObject normalRoomDoor; // Обычная дверь комнаты 1, которая исчезнет после 6/6 кассет
-    public GameObject brokenDoorOnFloor; // Выбитая дверь на полу, которая появится после 6/6 кассет
+    public GameObject normalRoomDoor; // Обычная дверь комнаты 1
+    public GameObject brokenDoorOnFloor; // Выбитая дверь на полу
 
     [Header("Bathroom Door")] // Блок двери ванной
-    public UniversalDoor bathroomDoor; // Дверь ванной, которая заблокируется после 6/6 кассет
+    public UniversalDoor bathroomDoor; // Дверь ванной
+
+    [Header("Bathroom Lock")] // Блок замка ванной
+    public GameObject bathroomLockCollider; // Коллайдер-замок, который появится после 6/6
 
     [Header("Monster")] // Блок монстра
-    public GameObject monsterObject; // Сам объект монстра в сцене
-    public MonsterAI monsterAI; // Главный AI монстра
+    public GameObject monsterObject; // Объект монстра
+    public MonsterAI monsterAI; // AI монстра
     public MonsterPatrol monsterPatrol; // Патруль монстра
 
-    public Transform monsterExitBlockPoint; // Точка у выхода, куда монстр переместится для блокировки пути игроку
+    public Transform monsterExitBlockPoint; // Точка у выхода
 
     [Header("Triggers")] // Блок финальных триггеров
-    public GameObject hallReturnDeathTrigger; // Триггер смерти при попытке вернуться в зал
-    public GameObject kitchenFinalTrigger; // Триггер кухни для финальной сцены
+    public GameObject hallReturnDeathTrigger; // Триггер смерти при возврате
+    public GameObject kitchenFinalTrigger; // Триггер кухни
 
-    [HideInInspector] // Прячем переменную из Inspector, чтобы случайно не менять её руками
-    public bool finalSequenceStarted = false; // Началась ли финальная фаза квартиры
+    [HideInInspector] // Прячем из Inspector
+    public bool finalSequenceStarted = false; // Началась ли финальная фаза
 
     private bool finalStarted = false; // Защита от повторного запуска финала
     private bool exitBlocked = false; // Защита от повторной блокировки выхода
@@ -34,7 +37,6 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (finalStarted) return; // Если финал уже запускался — выходим
 
         finalStarted = true; // Запоминаем, что финал начался
-
         finalSequenceStarted = true; // Сообщаем другим скриптам, что финальная фаза началась
 
         if (fallenWardrobe != null) // Если упавший шкаф назначен
@@ -47,58 +49,63 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
             normalRoomDoor.SetActive(false); // Прячем обычную дверь
         }
 
-        if (brokenDoorOnFloor != null) // Если выбитая дверь на полу назначена
+        if (brokenDoorOnFloor != null) // Если выбитая дверь назначена
         {
-            brokenDoorOnFloor.SetActive(true); // Показываем выбитую дверь на полу
+            brokenDoorOnFloor.SetActive(true); // Показываем выбитую дверь
         }
 
         if (bathroomDoor != null) // Если дверь ванной назначена
         {
             bathroomDoor.CloseDoor(); // Закрываем дверь ванной
             bathroomDoor.isLocked = true; // Блокируем дверь ванной
-            bathroomDoor.canMonsterOpen = false; // Запрещаем монстру открывать дверь ванной
+            bathroomDoor.canMonsterOpen = false; // Монстр не может открыть ванную
+        }
+
+        if (bathroomLockCollider != null) // Если коллайдер-замок назначен
+        {
+            bathroomLockCollider.SetActive(true); // Включаем замок после 6/6
         }
 
         if (hallReturnDeathTrigger != null) // Если триггер смерти назначен
         {
-            hallReturnDeathTrigger.SetActive(true); // Включаем опасную зону возврата в зал
+            hallReturnDeathTrigger.SetActive(true); // Включаем триггер смерти
         }
 
-        if (kitchenFinalTrigger != null) // Если триггер кухни назначен
+        if (kitchenFinalTrigger != null) // Если кухонный триггер назначен
         {
             kitchenFinalTrigger.SetActive(true); // Включаем кухонный триггер
         }
 
-        BlockExitWithMonster(); // Сразу ставим монстра у выхода после сбора всех кассет
+        BlockExitWithMonster(); // Ставим монстра у выхода
 
         Debug.Log("Финальная последовательность квартиры запущена"); // Сообщение в Console
     }
 
     public void BlockExitWithMonster() // Метод блокировки выхода монстром
     {
-        if (exitBlocked) return; // Если выход уже заблокирован — выходим
+        if (exitBlocked) return; // Если уже заблокирован — выходим
 
-        exitBlocked = true; // Запоминаем, что блокировка уже произошла
+        exitBlocked = true; // Запоминаем блокировку
 
-        if (monsterObject != null) // Если объект монстра назначен
+        if (monsterObject != null) // Если монстр назначен
         {
-            monsterObject.SetActive(true); // На всякий случай включаем монстра
+            monsterObject.SetActive(true); // Включаем монстра
         }
 
-        if (monsterExitBlockPoint != null && monsterObject != null) // Если есть точка и монстр
+        if (monsterExitBlockPoint != null && monsterObject != null) // Если точка и монстр есть
         {
-            monsterObject.transform.position = monsterExitBlockPoint.position; // Перемещаем монстра к выходу
-            monsterObject.transform.rotation = monsterExitBlockPoint.rotation; // Поворачиваем монстра как точку
+            monsterObject.transform.position = monsterExitBlockPoint.position; // Ставим монстра к выходу
+            monsterObject.transform.rotation = monsterExitBlockPoint.rotation; // Поворачиваем монстра
         }
 
-        if (monsterAI != null) // Если AI монстра назначен
+        if (monsterAI != null) // Если AI назначен
         {
-            monsterAI.isActivated = false; // Оставляем AI выключенным, чтобы монстр стоял на месте
+            monsterAI.isActivated = false; // Отключаем обычный AI
         }
 
         if (monsterPatrol != null) // Если патруль назначен
         {
-            monsterPatrol.isPatrolActive = false; // Убеждаемся, что патруль выключен
+            monsterPatrol.isPatrolActive = false; // Отключаем патруль
         }
 
         Debug.Log("Монстр заблокировал выход"); // Сообщение в Console
