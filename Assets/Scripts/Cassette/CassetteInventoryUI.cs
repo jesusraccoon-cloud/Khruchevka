@@ -91,4 +91,8 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
 
         cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount; // Показываем 0/6, 1/6 и т.д.
     }
+    public void RefreshDebugUI() // Обновить UI из debug-скрипта
+    {
+    UpdateUI(); // Обновляем текст счетчика
+    }
 }

@@ -12,6 +12,8 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
     public Transform allowedPoint; // Точка со стороны, откуда можно использовать окно
 
     public Transform blockedPoint; // Точка со стороны, откуда нельзя использовать окно
+        [Header("QTE")]
+    public FinalQTE finalQTE; // Ссылка на финальное QTE
 
     public void Interact() // Метод вызывается игроком через PlayerInteractor
     {
@@ -52,5 +54,9 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
         characterController.transform.rotation = exitPoint.rotation; // Поворачиваем игрока как ExitPoint
 
         characterController.enabled = true; // Включаем CharacterController обратно
+        if (finalQTE != null)
+    {
+        finalQTE.StartQTE();
+    }
     }
 }

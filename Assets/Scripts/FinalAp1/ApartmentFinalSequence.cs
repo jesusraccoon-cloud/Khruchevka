@@ -21,7 +21,16 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public MonsterPatrol monsterPatrol; // Патруль монстра
 
     public Transform monsterExitBlockPoint; // Точка у выхода
+    [Header("Window First Hit Reaction")] // Реакция на первый удар по финальному окну
+    public GameObject finalNormalDoor; // Обычная дверь, которую монстр выбивает
+    public GameObject finalBrokenDoor; // Выбитая дверь, которая появится
+    public Rigidbody fallenWardrobeRigidbody; // Rigidbody упавшего шкафа
+    public Vector3 wardrobeForceDirection = new Vector3(1f, 0.2f, 0f); // Куда отлетает шкаф
+    public float wardrobeForce = 4f; // Сила отлёта шкафа
+    public float wardrobeTorque = 2f; // Сила вращения шкафа
+    public Transform monsterAfterWindowHitPoint; // Точка, куда монстр идёт после удара по окну
 
+private bool windowFirstHitReactionStarted = false; // Защита от повторного запуска
     [Header("Triggers")] // Блок финальных триггеров
     public GameObject hallReturnDeathTrigger; // Триггер смерти при возврате
     public GameObject kitchenFinalTrigger; // Триггер кухни
@@ -109,5 +118,42 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         }
 
         Debug.Log("Монстр заблокировал выход"); // Сообщение в Console
+    }
+            public void OnFinalWindowFirstHit() // Метод вызывается при первом ударе по окну
+    {
+    if (windowFirstHitReactionStarted) return; // Если уже запускали — выходим
+
+    windowFirstHitReactionStarted = true; // Запоминаем запуск
+
+    if (finalNormalDoor != null) // Если обычная дверь назначена
+    {
+        finalNormalDoor.SetActive(false); // Прячем обычную дверь
+    }
+
+    if (finalBrokenDoor != null) // Если выбитая дверь назначена
+    {
+        finalBrokenDoor.SetActive(true); // Показываем выбитую дверь
+    }
+
+    if (fallenWardrobeRigidbody != null) // Если Rigidbody шкафа назначен
+    {
+        fallenWardrobeRigidbody.isKinematic = false; // Включаем физику шкафа
+
+        fallenWardrobeRigidbody.AddForce(wardrobeForceDirection.normalized * wardrobeForce, ForceMode.Impulse); // Толкаем шкаф
+
+        fallenWardrobeRigidbody.AddTorque(Random.insideUnitSphere * wardrobeTorque, ForceMode.Impulse); // Добавляем вращение
+    }
+
+    if (monsterObject != null) // Если объект монстра назначен
+    {
+        monsterObject.SetActive(true); // Включаем монстра
+    }
+
+    if (monsterAI != null && monsterAfterWindowHitPoint != null) // Если AI и точка назначены
+    {
+        monsterAI.GoToPointAndStop(monsterAfterWindowHitPoint); // Монстр идёт к точке через NavMesh
+    }
+
+    Debug.Log("Первый удар по окну: монстр выбил дверь, шкаф отлетел, монстр идёт к точке"); // Debug
     }
 }
