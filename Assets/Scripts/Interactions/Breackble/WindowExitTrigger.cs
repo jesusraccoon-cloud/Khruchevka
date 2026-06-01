@@ -8,12 +8,16 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
 
     public CharacterController characterController; // CharacterController игрока
 
-    [Header("Side Points")]
+    [Header("Side Points")] // Блок точек сторон окна
     public Transform allowedPoint; // Точка со стороны, откуда можно использовать окно
 
     public Transform blockedPoint; // Точка со стороны, откуда нельзя использовать окно
-        [Header("QTE")]
+
+    [Header("QTE")] // Блок QTE
     public FinalQTE finalQTE; // Ссылка на финальное QTE
+
+    [HideInInspector] // Прячем из Inspector
+    public bool playerStartedWindowExit = false; // Игрок начал перелезать через окно
 
     public void Interact() // Метод вызывается игроком через PlayerInteractor
     {
@@ -47,6 +51,8 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
 
     private void TeleportPlayer() // Безопасный телепорт игрока
     {
+        playerStartedWindowExit = true; // Сообщаем монстру, что игрок начал перелезать
+
         characterController.enabled = false; // Отключаем CharacterController перед телепортом
 
         characterController.transform.position = exitPoint.position; // Переносим игрока в ExitPoint
@@ -54,9 +60,10 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
         characterController.transform.rotation = exitPoint.rotation; // Поворачиваем игрока как ExitPoint
 
         characterController.enabled = true; // Включаем CharacterController обратно
-        if (finalQTE != null)
-    {
-        finalQTE.StartQTE();
-    }
+
+        if (finalQTE != null) // Если финальное QTE назначено
+        {
+            finalQTE.StartQTE(); // Запускаем QTE
+        }
     }
 }

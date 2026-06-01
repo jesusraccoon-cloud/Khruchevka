@@ -91,8 +91,20 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
 
         cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount; // Показываем 0/6, 1/6 и т.д.
     }
-    public void RefreshDebugUI() // Обновить UI из debug-скрипта
+    public void SetCassetteCountDebug(int newCount) // Debug-установка количества кассет
     {
-    UpdateUI(); // Обновляем текст счетчика
+        currentCassetteCount = Mathf.Clamp(newCount, 0, maxCassetteCount); // Ставим нужное количество кассет и ограничиваем максимумом
+
+        if (!monsterActivated && currentCassetteCount >= activateMonsterAt) // Если монстр ещё не активирован и кассет 4 или больше
+        {
+            ActivateMonster(); // Активируем монстра и разблокируем двери в зал
+        }
+
+        if (!finalEventTriggered && currentCassetteCount >= maxCassetteCount) // Если финал ещё не запускался и кассет 6 или больше
+        {
+            TriggerFinalEvent(); // Запускаем финальную последовательность
+        }
+
+        UpdateUI(); // Обновляем текст счетчика
     }
 }

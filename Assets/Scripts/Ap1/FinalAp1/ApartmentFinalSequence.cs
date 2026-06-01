@@ -92,32 +92,26 @@ private bool windowFirstHitReactionStarted = false; // Защита от пов�
 
     public void BlockExitWithMonster() // Метод блокировки выхода монстром
     {
-        if (exitBlocked) return; // Если уже заблокирован — выходим
+    if (exitBlocked) return; // Если уже заблокирован — выходим
 
-        exitBlocked = true; // Запоминаем блокировку
+    exitBlocked = true; // Запоминаем блокировку
 
-        if (monsterObject != null) // Если монстр назначен
-        {
-            monsterObject.SetActive(true); // Включаем монстра
-        }
+    if (monsterObject != null) // Если монстр назначен
+    {
+        monsterObject.SetActive(true); // Включаем монстра
+    }
 
-        if (monsterExitBlockPoint != null && monsterObject != null) // Если точка и монстр есть
-        {
-            monsterObject.transform.position = monsterExitBlockPoint.position; // Ставим монстра к выходу
-            monsterObject.transform.rotation = monsterExitBlockPoint.rotation; // Поворачиваем монстра
-        }
+    if (monsterAI != null && monsterExitBlockPoint != null) // Если AI и точка назначены
+    {
+        monsterAI.GoToPointAndStop(monsterExitBlockPoint); // Монстр сам идёт к выходу через NavMesh
+    }
 
-        if (monsterAI != null) // Если AI назначен
-        {
-            monsterAI.isActivated = false; // Отключаем обычный AI
-        }
+    if (monsterPatrol != null) // Если патруль назначен
+    {
+        monsterPatrol.isPatrolActive = false; // Отключаем патруль
+    }
 
-        if (monsterPatrol != null) // Если патруль назначен
-        {
-            monsterPatrol.isPatrolActive = false; // Отключаем патруль
-        }
-
-        Debug.Log("Монстр заблокировал выход"); // Сообщение в Console
+        Debug.Log("Монстр пошёл блокировать выход"); // Сообщение в Console
     }
             public void OnFinalWindowFirstHit() // Метод вызывается при первом ударе по окну
     {
@@ -151,7 +145,7 @@ private bool windowFirstHitReactionStarted = false; // Защита от пов�
 
     if (monsterAI != null && monsterAfterWindowHitPoint != null) // Если AI и точка назначены
     {
-        monsterAI.GoToPointAndStop(monsterAfterWindowHitPoint); // Монстр идёт к точке через NavMesh
+        monsterAI.StartFinalWindowThreat(monsterAfterWindowHitPoint);
     }
 
     Debug.Log("Первый удар по окну: монстр выбил дверь, шкаф отлетел, монстр идёт к точке"); // Debug

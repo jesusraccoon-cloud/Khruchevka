@@ -19,7 +19,7 @@ public class KitchenFinalTrigger : MonoBehaviour // Триггер кухонн�
 
         if (monsterAI != null) // Если монстр назначен
         {
-            monsterAI.GoToPointAndStop(monsterKitchenDoorStopPoint); // Отправляем монстра к двери кухни
+            monsterAI.StartFinalKitchenChase();
         }
         else // Если монстр не назначен
         {

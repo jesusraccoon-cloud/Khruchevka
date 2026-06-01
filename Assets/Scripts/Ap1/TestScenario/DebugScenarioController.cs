@@ -48,18 +48,16 @@ public class DebugScenarioController : MonoBehaviour // Отдельный debug
             TeleportPlayer(kitchenTeleportPoint, "кухня"); // Телепортируем игрока на кухню
         }
         if (Input.GetKeyDown(resetSceneKey)) // Если нажали кнопку сброса
-        {       
+{
         ResetScene(); // Перезапускаем сцену
-        }
+}
     }
 
     void DebugSetPhaseFour() // Debug-фаза 4/6
     {
         if (cassetteInventoryUI != null) // Если счетчик назначен
         {
-            cassetteInventoryUI.currentCassetteCount = 4; // Ставим 4/6
-
-            cassetteInventoryUI.RefreshDebugUI(); // Обновляем UI
+            cassetteInventoryUI.SetCassetteCountDebug(4); // Ставим 4/6 через настоящую debug-логику
         }
 
         if (monsterAI != null) // Если монстр назначен
@@ -74,9 +72,7 @@ public class DebugScenarioController : MonoBehaviour // Отдельный debug
     {
         if (cassetteInventoryUI != null) // Если счетчик назначен
         {
-            cassetteInventoryUI.currentCassetteCount = 6; // Ставим 6/6
-
-            cassetteInventoryUI.RefreshDebugUI(); // Обновляем UI
+            cassetteInventoryUI.SetCassetteCountDebug(6); // Ставим 6/6 через настоящую debug-логику
         }
 
         if (monsterAI != null) // Если монстр назначен
@@ -121,9 +117,14 @@ public class DebugScenarioController : MonoBehaviour // Отдельный debug
         Debug.Log("DEBUG: игрок телепортирован: " + pointName); // Сообщение в Console
     }
     void ResetScene() // Полный сброс сцены
-{
-    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); // Загружаем текущую сцену заново
+    {
+        Time.timeScale = 1f; // Возвращаем обычное течение времени после Game Over
 
-    Debug.Log("DEBUG: сцена перезапущена"); // Сообщение в Console
-}
+        Cursor.lockState = CursorLockMode.Locked; // Снова блокируем курсор в центре экрана
+        Cursor.visible = false; // Прячем курсор
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); // Загружаем текущую сцену заново
+
+        Debug.Log("DEBUG: сцена перезапущена"); // Сообщение в Console
+    }
 }
