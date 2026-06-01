@@ -26,7 +26,15 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
     [Header("Noise Investigation")] // Блок исследования шума
     public float noiseArriveDistance = 1.2f; // На каком расстоянии считать, что монстр дошёл до шума
     public float noiseWaitTime = 4f; // Сколько секунд монстр стоит на месте шума
+    [Header("Attack")] // Блок атаки
+    public float attackDistance = 1.2f; // На каком расстоянии монстр атакует игрока
+    public float attackDelay = 1.2f; // Через сколько секунд после начала атаки показать Game Over
 
+    public Animator animator; // Animator монстра
+    public GameOverManager gameOverManager; // Ссылка на систему Game Over
+    public StarterAssets.FirstPersonController playerController; // Ссылка на контроллер игрока
+
+private bool isAttacking = false; // Выполняет ли монстр атаку сейчас
     private Vector3 lastSeenPosition; // Последняя позиция игрока
     private Vector3 noisePosition; // Позиция последнего шума
 
@@ -94,9 +102,17 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
         }
 
         if (isChasing) // Если идёт погоня
-        {
-            agent.SetDestination(player.position); // Идём за игроком
-        }
+    {
+    float distanceToPlayer = Vector3.Distance(transform.position, player.position); // Считаем расстояние до игрока
+
+    if (distanceToPlayer <= attackDistance) // Если игрок подошёл слишком близко
+    {
+        StartAttack(); // Начинаем атаку
+        return; // Выходим из Update
+    }
+
+    agent.SetDestination(player.position); // Продолжаем преследование
+    }
     }
 
     bool CanSeePlayer() // Проверка видимости игрока
@@ -263,4 +279,46 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
             patrol.StartPatrol(); // Запускаем патруль
         }
     }
+        void StartAttack() // Начать атаку игрока
+{
+    if (isAttacking) return; // Если атака уже идёт — ничего не делаем
+
+    isAttacking = true; // Помечаем что атака началась
+
+    isChasing = false; // Останавливаем погоню
+    isInvestigatingNoise = false; // Отключаем расследование шума
+    isWaitingAtNoise = false; // Отключаем ожидание на шуме
+
+    if (patrol != null) // Если назначен патруль
+    {
+        patrol.isPatrolActive = false; // Выключаем патруль
+    }
+
+    if (agent != null) // Если агент существует
+    {
+        agent.ResetPath(); // Сбрасываем путь
+        agent.isStopped = true; // Полностью останавливаем NavMeshAgent
+    }
+
+    if (playerController != null) // Если назначен контроллер игрока
+    {
+        playerController.canMove = false; // Запрещаем движение
+        playerController.canLook = false; // Запрещаем вращение камеры
+    }
+
+    if (animator != null) // Если назначен Animator
+    {
+        animator.SetTrigger("Attack"); // Запускаем анимацию атаки
+    }
+
+    Invoke(nameof(FinishAttack), attackDelay); // Через несколько секунд завершаем атаку
+}
+
+void FinishAttack() // Завершение атаки
+{
+    if (gameOverManager != null) // Если назначен GameOverManager
+    {
+        gameOverManager.ShowGameOver(); // Показываем экран Game Over
+    }
+}
 }
