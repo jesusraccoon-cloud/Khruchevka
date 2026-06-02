@@ -69,24 +69,14 @@ public class DebugScenarioController : MonoBehaviour // Отдельный debug
     }
 
     void DebugSetPhaseSix() // Debug-фаза 6/6
+{
+    if (cassetteInventoryUI != null) // Если счетчик назначен
     {
-        if (cassetteInventoryUI != null) // Если счетчик назначен
-        {
-            cassetteInventoryUI.SetCassetteCountDebug(6); // Ставим 6/6 через настоящую debug-логику
-        }
-
-        if (monsterAI != null) // Если монстр назначен
-        {
-            monsterAI.ActivateMonster(); // Активируем монстра
-        }
-
-        if (finalSequence != null) // Если финальный сценарий назначен
-        {
-            finalSequence.StartFinalSequence(); // Запускаем финал
-        }
-
-        Debug.Log("DEBUG: включена фаза 6/6"); // Сообщение в Console
+        cassetteInventoryUI.SetCassetteCountDebug(6); // Ставим 6/6 через настоящую логику кассет
     }
+
+    Debug.Log("DEBUG: включена фаза 6/6"); // Сообщение в Console
+}
 
     void TeleportPlayer(Transform targetPoint, string pointName) // Телепорт игрока
     {

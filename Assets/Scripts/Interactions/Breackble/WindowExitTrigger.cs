@@ -16,6 +16,9 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
     [Header("QTE")] // Блок QTE
     public FinalQTE finalQTE; // Ссылка на финальное QTE
 
+    [Header("Final Sequence")] // Блок финальной последовательности
+    public ApartmentFinalSequence finalSequence; // Ссылка на финальный сценарий квартиры
+
     [HideInInspector] // Прячем из Inspector
     public bool playerStartedWindowExit = false; // Игрок начал перелезать через окно
 
@@ -52,6 +55,11 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
     private void TeleportPlayer() // Безопасный телепорт игрока
     {
         playerStartedWindowExit = true; // Сообщаем монстру, что игрок начал перелезать
+
+        if (finalSequence != null) // Если финальная последовательность назначена
+        {
+            finalSequence.OnPlayerEscapedThroughWindow(); // Сообщаем финалу, что игрок перелез через окно
+        }
 
         characterController.enabled = false; // Отключаем CharacterController перед телепортом
 

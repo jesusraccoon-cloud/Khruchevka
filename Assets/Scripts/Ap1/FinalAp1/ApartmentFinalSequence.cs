@@ -1,153 +1,161 @@
-using UnityEngine; // Подключаем Unity: GameObject, Transform, Debug и другие базовые классы
+using UnityEngine; // Подключаем Unity
 
 public class ApartmentFinalSequence : MonoBehaviour // Главный режиссёр финальной сцены квартиры
 {
-    [Header("Final Objects")] // Блок объектов финального события
-    public GameObject fallenWardrobe; // Упавший шкаф, который включится после сбора всех кассет
+    [Header("Final Objects")]
+    public GameObject fallenWardrobe; // Упавший шкаф
 
-    [Header("Room 1 Door Break")] // Блок визуальной поломки двери комнаты 1
-    public GameObject normalRoomDoor; // Обычная дверь комнаты 1
-    public GameObject brokenDoorOnFloor; // Выбитая дверь на полу
+    [Header("Room 1 Door Break")]
+    public GameObject normalRoomDoor; // Обычная дверь комнаты
+    public GameObject brokenDoorOnFloor; // Выбитая дверь
 
-    [Header("Bathroom Door")] // Блок двери ванной
+    [Header("Bathroom Door")]
     public UniversalDoor bathroomDoor; // Дверь ванной
 
-    [Header("Bathroom Lock")] // Блок замка ванной
-    public GameObject bathroomLockCollider; // Коллайдер-замок, который появится после 6/6
+    [Header("Bathroom Lock")]
+    public GameObject bathroomLockCollider; // Замок ванной
 
-    [Header("Monster")] // Блок монстра
+    [Header("Monster")]
     public GameObject monsterObject; // Объект монстра
     public MonsterAI monsterAI; // AI монстра
     public MonsterPatrol monsterPatrol; // Патруль монстра
+    public Transform monsterExitBlockPoint; // Точка блокировки выхода
 
-    public Transform monsterExitBlockPoint; // Точка у выхода
-    [Header("Window First Hit Reaction")] // Реакция на первый удар по финальному окну
-    public GameObject finalNormalDoor; // Обычная дверь, которую монстр выбивает
-    public GameObject finalBrokenDoor; // Выбитая дверь, которая появится
-    public Rigidbody fallenWardrobeRigidbody; // Rigidbody упавшего шкафа
-    public Vector3 wardrobeForceDirection = new Vector3(1f, 0.2f, 0f); // Куда отлетает шкаф
-    public float wardrobeForce = 4f; // Сила отлёта шкафа
-    public float wardrobeTorque = 2f; // Сила вращения шкафа
-    public Transform monsterAfterWindowHitPoint; // Точка, куда монстр идёт после удара по окну
+    [Header("Window First Hit Reaction")]
+    public GameObject finalNormalDoor; // Обычная дверь
+    public GameObject finalBrokenDoor; // Выбитая дверь
+    public Rigidbody fallenWardrobeRigidbody; // Rigidbody шкафа
+    public Vector3 wardrobeForceDirection = new Vector3(1f, 0.2f, 0f); // Направление силы
+    public float wardrobeForce = 4f; // Сила толчка
+    public float wardrobeTorque = 2f; // Сила вращения
+    public Transform monsterAfterWindowHitPoint; // Точка у окна
 
-private bool windowFirstHitReactionStarted = false; // Защита от повторного запуска
-    [Header("Triggers")] // Блок финальных триггеров
+    [Header("Triggers")]
     public GameObject hallReturnDeathTrigger; // Триггер смерти при возврате
     public GameObject kitchenFinalTrigger; // Триггер кухни
+    public GameObject bathroomExitChaseTrigger; // Триггер выхода из ванной
 
-    [HideInInspector] // Прячем из Inspector
-    public bool finalSequenceStarted = false; // Началась ли финальная фаза
+    [HideInInspector]
+    public bool finalSequenceStarted = false; // Финал начался
 
-    private bool finalStarted = false; // Защита от повторного запуска финала
-    private bool exitBlocked = false; // Защита от повторной блокировки выхода
+    private bool finalStarted = false; // Финал уже запускался
+    private bool exitBlocked = false; // Выход уже блокировался
+    private bool windowFirstHitReactionStarted = false; // Первый удар по окну уже был
+    private bool playerEscapedThroughWindow = false; // Игрок перелез через окно
+    private bool bathroomExitTriggered = false; // Триггер выхода из ванной уже сработал
 
-    public void StartFinalSequence() // Метод запуска финала квартиры
+    public void StartFinalSequence() // Запуск финала
     {
-        if (finalStarted) return; // Если финал уже запускался — выходим
+        if (finalStarted) return; // Если финал уже был — выходим
 
-        finalStarted = true; // Запоминаем, что финал начался
-        finalSequenceStarted = true; // Сообщаем другим скриптам, что финальная фаза началась
+        finalStarted = true; // Запоминаем запуск
+        finalSequenceStarted = true; // Сообщаем другим скриптам
 
-        if (fallenWardrobe != null) // Если упавший шкаф назначен
-        {
-            fallenWardrobe.SetActive(true); // Включаем упавший шкаф
-        }
+        if (fallenWardrobe != null) fallenWardrobe.SetActive(true); // Включаем шкаф
 
-        if (normalRoomDoor != null) // Если обычная дверь комнаты назначена
-        {
-            normalRoomDoor.SetActive(false); // Прячем обычную дверь
-        }
+        if (normalRoomDoor != null) normalRoomDoor.SetActive(false); // Прячем обычную дверь
 
-        if (brokenDoorOnFloor != null) // Если выбитая дверь назначена
-        {
-            brokenDoorOnFloor.SetActive(true); // Показываем выбитую дверь
-        }
+        if (brokenDoorOnFloor != null) brokenDoorOnFloor.SetActive(true); // Показываем выбитую дверь
 
         if (bathroomDoor != null) // Если дверь ванной назначена
         {
-            bathroomDoor.CloseDoor(); // Закрываем дверь ванной
-            bathroomDoor.isLocked = true; // Блокируем дверь ванной
-            bathroomDoor.canMonsterOpen = false; // Монстр не может открыть ванную
+            bathroomDoor.CloseDoor(); // Закрываем дверь
+            bathroomDoor.isLocked = true; // Блокируем дверь
+            bathroomDoor.canMonsterOpen = false; // Монстр не открывает ванную
         }
 
-        if (bathroomLockCollider != null) // Если коллайдер-замок назначен
+        if (bathroomLockCollider != null) bathroomLockCollider.SetActive(true); // Включаем замок
+
+        if (hallReturnDeathTrigger != null) hallReturnDeathTrigger.SetActive(true); // Включаем триггер смерти
+
+        if (kitchenFinalTrigger != null) kitchenFinalTrigger.SetActive(true); // Включаем кухонный триггер
+
+        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Пока триггер выхода из ванной выключен
+
+        BlockExitWithMonster(); // Монстр идёт блокировать выход
+
+        Debug.Log("Финальная последовательность квартиры запущена"); // Debug
+    }
+
+    public void BlockExitWithMonster() // Монстр идёт к выходу
+    {
+        if (exitBlocked) return; // Если уже запускали — выходим
+
+        exitBlocked = true; // Запоминаем
+
+        if (monsterObject != null) monsterObject.SetActive(true); // Включаем монстра
+
+        if (monsterAI != null && monsterExitBlockPoint != null) // Если AI и точка есть
         {
-            bathroomLockCollider.SetActive(true); // Включаем замок после 6/6
+            monsterAI.GoToPointAndStop(monsterExitBlockPoint); // Монстр идёт к выходу
         }
 
-        if (hallReturnDeathTrigger != null) // Если триггер смерти назначен
+        if (monsterPatrol != null) monsterPatrol.isPatrolActive = false; // Выключаем патруль
+
+        Debug.Log("Монстр пошёл блокировать выход"); // Debug
+    }
+
+    public void OnFinalWindowFirstHit() // Первый удар по окну
+    {
+        if (windowFirstHitReactionStarted) return; // Если уже было — выходим
+
+        windowFirstHitReactionStarted = true; // Запоминаем
+
+        if (finalNormalDoor != null) finalNormalDoor.SetActive(false); // Прячем дверь
+
+        if (finalBrokenDoor != null) finalBrokenDoor.SetActive(true); // Показываем выбитую дверь
+
+        if (fallenWardrobeRigidbody != null) // Если шкаф назначен
         {
-            hallReturnDeathTrigger.SetActive(true); // Включаем триггер смерти
+            fallenWardrobeRigidbody.isKinematic = false; // Включаем физику
+            fallenWardrobeRigidbody.AddForce(wardrobeForceDirection.normalized * wardrobeForce, ForceMode.Impulse); // Толкаем шкаф
+            fallenWardrobeRigidbody.AddTorque(Random.insideUnitSphere * wardrobeTorque, ForceMode.Impulse); // Вращаем шкаф
         }
 
-        if (kitchenFinalTrigger != null) // Если кухонный триггер назначен
+        if (monsterObject != null) monsterObject.SetActive(true); // Включаем монстра
+
+        if (monsterAI != null && monsterAfterWindowHitPoint != null) // Если AI и точка есть
         {
-            kitchenFinalTrigger.SetActive(true); // Включаем кухонный триггер
+            monsterAI.StartFinalWindowThreat(monsterAfterWindowHitPoint); // Монстр угрожает у окна
         }
 
-        BlockExitWithMonster(); // Ставим монстра у выхода
-
-        Debug.Log("Финальная последовательность квартиры запущена"); // Сообщение в Console
+        Debug.Log("Первый удар по окну: монстр начал угрозу у окна"); // Debug
     }
 
-    public void BlockExitWithMonster() // Метод блокировки выхода монстром
+    public void OnPlayerEscapedThroughWindow() // Игрок перелез через окно
     {
-    if (exitBlocked) return; // Если уже заблокирован — выходим
+        if (!finalSequenceStarted) return; // Если финал не начался — выходим
 
-    exitBlocked = true; // Запоминаем блокировку
+        playerEscapedThroughWindow = true; // Запоминаем, что игрок перелез
 
-    if (monsterObject != null) // Если монстр назначен
-    {
-        monsterObject.SetActive(true); // Включаем монстра
+        if (bathroomExitChaseTrigger != null) // Если триггер выхода из ванной назначен
+        {
+            bathroomExitChaseTrigger.SetActive(true); // Включаем триггер после окна
+        }
+
+        Debug.Log("Игрок перелез через окно, триггер выхода из ванной включён"); // Debug
     }
 
-    if (monsterAI != null && monsterExitBlockPoint != null) // Если AI и точка назначены
+    public void OnBathroomExitTrigger() // Игрок вышел из ванной
     {
-        monsterAI.GoToPointAndStop(monsterExitBlockPoint); // Монстр сам идёт к выходу через NavMesh
-    }
+        if (bathroomExitTriggered) return; // Если уже сработало — выходим
 
-    if (monsterPatrol != null) // Если патруль назначен
-    {
-        monsterPatrol.isPatrolActive = false; // Отключаем патруль
-    }
+        if (!finalSequenceStarted) return; // Если финал не начался — выходим
 
-        Debug.Log("Монстр пошёл блокировать выход"); // Сообщение в Console
-    }
-            public void OnFinalWindowFirstHit() // Метод вызывается при первом ударе по окну
-    {
-    if (windowFirstHitReactionStarted) return; // Если уже запускали — выходим
+        if (!playerEscapedThroughWindow) return; // Если игрок ещё не перелез через окно — выходим
 
-    windowFirstHitReactionStarted = true; // Запоминаем запуск
+        bathroomExitTriggered = true; // Запоминаем срабатывание
 
-    if (finalNormalDoor != null) // Если обычная дверь назначена
-    {
-        finalNormalDoor.SetActive(false); // Прячем обычную дверь
-    }
+        if (monsterAI != null) // Если монстр назначен
+        {
+            monsterAI.ForceChasePlayer();
+        }
 
-    if (finalBrokenDoor != null) // Если выбитая дверь назначена
-    {
-        finalBrokenDoor.SetActive(true); // Показываем выбитую дверь
-    }
+        if (bathroomExitChaseTrigger != null) // Если триггер назначен
+        {
+            bathroomExitChaseTrigger.SetActive(false); // Выключаем триггер
+        }
 
-    if (fallenWardrobeRigidbody != null) // Если Rigidbody шкафа назначен
-    {
-        fallenWardrobeRigidbody.isKinematic = false; // Включаем физику шкафа
-
-        fallenWardrobeRigidbody.AddForce(wardrobeForceDirection.normalized * wardrobeForce, ForceMode.Impulse); // Толкаем шкаф
-
-        fallenWardrobeRigidbody.AddTorque(Random.insideUnitSphere * wardrobeTorque, ForceMode.Impulse); // Добавляем вращение
-    }
-
-    if (monsterObject != null) // Если объект монстра назначен
-    {
-        monsterObject.SetActive(true); // Включаем монстра
-    }
-
-    if (monsterAI != null && monsterAfterWindowHitPoint != null) // Если AI и точка назначены
-    {
-        monsterAI.StartFinalWindowThreat(monsterAfterWindowHitPoint);
-    }
-
-    Debug.Log("Первый удар по окну: монстр выбил дверь, шкаф отлетел, монстр идёт к точке"); // Debug
+        Debug.Log("Игрок вышел из ванной, монстр начал преследование"); // Debug
     }
 }

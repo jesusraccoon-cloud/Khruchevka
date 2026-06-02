@@ -539,4 +539,32 @@ public class MonsterAI : MonoBehaviour // Главный скрипт монст
             agent.isStopped = true; // Останавливаем агента
         }
     }
+    public void ForceChasePlayer() // Принудительно заставить монстра преследовать игрока
+{
+    if (agent == null) return; // Если агент не назначен — выходим
+    if (player == null) return; // Если игрок не назначен — выходим
+    if (!agent.isActiveAndEnabled) return; // Если агент выключен — выходим
+    if (!agent.isOnNavMesh) return; // Если монстр не на NavMesh — выходим
+
+    isActivated = true; // Включаем монстра
+
+    isFinalKitchenChase = false; // Выключаем кухонную погоню
+    isFinalWindowThreat = false; // Выключаем угрозу у окна
+    isGoingToPoint = false; // Выключаем движение к точке
+    isStandingAtSpecialPoint = false; // Выключаем стояние на точке
+    isInvestigatingNoise = false; // Выключаем шум
+    isWaitingAtNoise = false; // Выключаем ожидание на шуме
+
+    isChasing = true; // Включаем погоню
+
+    if (patrol != null) // Если патруль назначен
+    {
+        patrol.isPatrolActive = false; // Выключаем патруль
+    }
+
+    agent.isStopped = false; // Разрешаем движение агенту
+    agent.SetDestination(player.position); // Сразу отправляем монстра к игроку
+
+    Debug.Log("Монстр принудительно начал преследовать игрока"); // Сообщение в Console
+}
 }
