@@ -1,5 +1,13 @@
 * text=auto
 
-*.cs text
-*.unity text
-*.meta text
+*.cs text eol=lf
+*.shader text eol=lf
+*.asmdef text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.meta text eol=lf
+*.unity text eol=lf
+*.prefab text eol=lf
+*.mat text eol=lf
+*.asset text eol=lf
