@@ -19,11 +19,18 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
     [Header("Final Sequence")] // Блок финальной последовательности
     public ApartmentFinalSequence finalSequence; // Ссылка на финальный сценарий квартиры
 
+    [Header("Use Once")] // Блок одноразового использования
+    public bool disableAfterUse = true; // Нужно ли отключать окно после использования
+
     [HideInInspector] // Прячем из Inspector
     public bool playerStartedWindowExit = false; // Игрок начал перелезать через окно
 
+    private bool exitUsed = false; // Было ли окно уже использовано
+
     public void Interact() // Метод вызывается игроком через PlayerInteractor
     {
+        if (exitUsed) return; // Если окно уже использовали — выходим
+
         if (breakableWindow == null) return; // Если окно не назначено — выходим
 
         if (!breakableWindow.IsBroken) return; // Если окно не разбито — выходим
@@ -54,6 +61,8 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
 
     private void TeleportPlayer() // Безопасный телепорт игрока
     {
+        exitUsed = true; // Запоминаем, что окно уже использовано
+
         playerStartedWindowExit = true; // Сообщаем монстру, что игрок начал перелезать
 
         if (finalSequence != null) // Если финальная последовательность назначена
@@ -72,6 +81,11 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
         if (finalQTE != null) // Если финальное QTE назначено
         {
             finalQTE.StartQTE(); // Запускаем QTE
+        }
+
+        if (disableAfterUse) // Если включено отключение после использования
+        {
+            gameObject.SetActive(false); // Отключаем этот объект, чтобы окно нельзя было использовать повторно
         }
     }
 }

@@ -2,26 +2,29 @@ using UnityEngine; // Подключаем Unity
 
 public class ApartmentFinalSequence : MonoBehaviour // Главный режиссёр финальной сцены квартиры
 {
-    [Header("Final Objects")]
+    [Header("Final Objects")] // Блок финальных объектов
     public GameObject fallenWardrobe; // Упавший шкаф
 
-    [Header("Room 1 Door Break")]
+    [Header("Closet Fall")] // Блок ручного падения шкафа
+    public ClosetPhysicalFall closetPhysicalFall; // Скрипт падения шкафа
+
+    [Header("Room 1 Door Break")] // Блок поломки двери комнаты
     public GameObject normalRoomDoor; // Обычная дверь комнаты
     public GameObject brokenDoorOnFloor; // Выбитая дверь
 
-    [Header("Bathroom Door")]
+    [Header("Bathroom Door")] // Блок двери ванной
     public UniversalDoor bathroomDoor; // Дверь ванной
 
-    [Header("Bathroom Lock")]
+    [Header("Bathroom Lock")] // Блок замка ванной
     public GameObject bathroomLockCollider; // Замок ванной
 
-    [Header("Monster")]
+    [Header("Monster")] // Блок монстра
     public GameObject monsterObject; // Объект монстра
     public MonsterAI monsterAI; // AI монстра
     public MonsterPatrol monsterPatrol; // Патруль монстра
     public Transform monsterExitBlockPoint; // Точка блокировки выхода
 
-    [Header("Window First Hit Reaction")]
+    [Header("Window First Hit Reaction")] // Блок реакции на первый удар по окну
     public GameObject finalNormalDoor; // Обычная дверь
     public GameObject finalBrokenDoor; // Выбитая дверь
     public Rigidbody fallenWardrobeRigidbody; // Rigidbody шкафа
@@ -30,12 +33,12 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public float wardrobeTorque = 2f; // Сила вращения
     public Transform monsterAfterWindowHitPoint; // Точка у окна
 
-    [Header("Triggers")]
+    [Header("Triggers")] // Блок триггеров
     public GameObject hallReturnDeathTrigger; // Триггер смерти при возврате
     public GameObject kitchenFinalTrigger; // Триггер кухни
     public GameObject bathroomExitChaseTrigger; // Триггер выхода из ванной
 
-    [HideInInspector]
+    [HideInInspector] // Прячем в Inspector
     public bool finalSequenceStarted = false; // Финал начался
 
     private bool finalStarted = false; // Финал уже запускался
@@ -44,12 +47,25 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     private bool playerEscapedThroughWindow = false; // Игрок перелез через окно
     private bool bathroomExitTriggered = false; // Триггер выхода из ванной уже сработал
 
+    private void Start() // При старте сцены
+    {
+        if (closetPhysicalFall != null) // Если шкаф назначен
+        {
+            closetPhysicalFall.canFall = false; // Запрещаем уронить шкаф до 6/6
+        }
+    }
+
     public void StartFinalSequence() // Запуск финала
     {
         if (finalStarted) return; // Если финал уже был — выходим
 
         finalStarted = true; // Запоминаем запуск
         finalSequenceStarted = true; // Сообщаем другим скриптам
+
+        if (closetPhysicalFall != null) // Если шкаф назначен
+        {
+            closetPhysicalFall.canFall = true; // Разрешаем уронить шкаф после 6/6
+        }
 
         if (fallenWardrobe != null) fallenWardrobe.SetActive(true); // Включаем шкаф
 
@@ -148,7 +164,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterAI != null) // Если монстр назначен
         {
-            monsterAI.ForceChasePlayer();
+            monsterAI.ForceChasePlayer(); // Принудительно запускаем погоню
         }
 
         if (bathroomExitChaseTrigger != null) // Если триггер назначен
