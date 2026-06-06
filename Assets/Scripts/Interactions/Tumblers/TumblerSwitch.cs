@@ -1,55 +1,70 @@
-using UnityEngine; // Подключаем Unity-классы: MonoBehaviour, Renderer, Color, Material
+using UnityEngine; // Подключаем Unity
 
-public class TumblerSwitch : MonoBehaviour // Тумблер больше НЕ является отдельным интерактивным объектом
+public class TumblerSwitch : MonoBehaviour // Скрипт тумблера УМПСР
 {
-    public bool isOn = false; // Хранит состояние тумблера: включен или выключен
+    public bool isOn = false; // Включен ли тумблер
 
-    [Header("Renderer")] // Заголовок в Inspector
-    public Renderer targetRenderer; // Renderer тумблера, у которого будем менять цвет
+    [Header("Renderer")] // Блок Renderer
+    public Renderer targetRenderer; // Renderer тумблера
 
-    [Header("Colors")] // Заголовок в Inspector
+    [Header("Colors")] // Блок цветов
     public Color normalColor = Color.gray; // Цвет выключенного тумблера
     public Color highlightColor = Color.yellow; // Цвет при наведении
     public Color activeColor = Color.green; // Цвет включенного тумблера
 
-    private Material runtimeMaterial; // Отдельная копия материала только для этого тумблера
+    [Header("Apartment Power")] // Блок питания квартиры
+    public ApartmentPowerController apartmentPowerController; // Контроллер квартиры
 
-    private void Start() // Запускается один раз при старте сцены
+    private Material runtimeMaterial; // Индивидуальный материал тумблера
+
+    private void Start() // Вызывается при старте сцены
     {
-        if (targetRenderer == null) // Если Renderer не назначен вручную
-        {
-            targetRenderer = GetComponent<Renderer>(); // Ищем Renderer на этом объекте
-        }
+        if (targetRenderer == null) // Если Renderer не назначен
+            targetRenderer = GetComponent<Renderer>(); // Ищем Renderer на объекте
 
-        if (targetRenderer == null) // Если всё ещё не найден
-        {
-            targetRenderer = GetComponentInChildren<Renderer>(); // Ищем Renderer у дочерних объектов
-        }
+        if (targetRenderer == null) // Если Renderer всё ещё не найден
+            targetRenderer = GetComponentInChildren<Renderer>(); // Ищем Renderer в детях
 
         if (targetRenderer != null) // Если Renderer найден
         {
-            runtimeMaterial = new Material(targetRenderer.material); // Создаем отдельную копию материала
-            targetRenderer.material = runtimeMaterial; // Назначаем копию Renderer'у
+            runtimeMaterial = new Material(targetRenderer.material); // Создаём копию материала
+            targetRenderer.material = runtimeMaterial; // Назначаем копию тумблеру
         }
 
-        UpdateVisual(); // Обновляем цвет тумблера при старте
+        SyncWithApartmentPower(); // Синхронизируем состояние с квартирой
+        UpdateVisual(); // Обновляем цвет
     }
 
-    public void Toggle() // Метод переключения тумблера
+    public void Toggle() // Вызывается при нажатии на тумблер
     {
-        isOn = !isOn; // Меняем состояние на противоположное
+        if (apartmentPowerController == null) // Если контроллер не назначен
+        {
+            Debug.LogWarning("У тумблера не назначен ApartmentPowerController"); // Warning
+            return; // Выходим
+        }
 
-        UpdateVisual(); // Обновляем внешний вид
+        apartmentPowerController.TogglePower(); // Просим квартиру переключить питание
+
+        SyncWithApartmentPower(); // Берём реальное состояние квартиры
+
+        UpdateVisual(); // Обновляем цвет
+    }
+
+    private void SyncWithApartmentPower() // Синхронизация тумблера с квартирой
+    {
+        if (apartmentPowerController == null) return; // Если контроллера нет — выходим
+
+        isOn = apartmentPowerController.isPoweredOn; // Тумблер равен реальному питанию квартиры
     }
 
     public void SetHighlight(bool state) // Подсветка при наведении
     {
         if (runtimeMaterial == null) return; // Если материала нет — выходим
 
-        if (isOn) // Если тумблер включен
+        if (isOn) // Если тумблер включён
         {
             runtimeMaterial.color = activeColor; // Оставляем зелёный цвет
-            return; // Не даем подсветке перебить активный цвет
+            return; // Выходим
         }
 
         runtimeMaterial.color = state ? highlightColor : normalColor; // Жёлтый при наведении, серый без наведения
@@ -59,6 +74,12 @@ public class TumblerSwitch : MonoBehaviour // Тумблер больше НЕ �
     {
         if (runtimeMaterial == null) return; // Если материала нет — выходим
 
-        runtimeMaterial.color = isOn ? activeColor : normalColor; // Зеленый если включен, серый если выключен
+        runtimeMaterial.color = isOn ? activeColor : normalColor; // Зелёный если включён, серый если выключен
+    }
+
+    public void SetState(bool state) // Принудительная установка состояния
+    {
+        isOn = state; // Записываем состояние
+        UpdateVisual(); // Обновляем цвет
     }
 }

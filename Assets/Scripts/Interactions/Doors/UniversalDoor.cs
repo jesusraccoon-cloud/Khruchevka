@@ -1,123 +1,120 @@
 using UnityEngine; // Подключаем Unity
 using System.Collections; // Подключаем работу с корутинами
 
-public class UniversalDoor : MonoBehaviour, IInteractable // Основные классы скрипта двери
+public class UniversalDoor : MonoBehaviour, IInteractable // Универсальная дверь
 {
     public enum DoorOpenDirection // Направление открытия двери
     {
-        Forward, // Открытие в положительную сторону выбранной оси
-        Backward // Открытие в отрицательную сторону выбранной оси
+        Forward, // Открытие вперёд
+        Backward // Открытие назад
     }
 
     public enum DoorRotationAxis // Ось вращения двери
     {
-        X, // Для дверцы вверх/вниз
-        Y, // Для обычной двери влево/вправо
-        Z  // Запасной вариант
+        X, // Ось X
+        Y, // Ось Y
+        Z  // Ось Z
     }
 
-    [Header("Door Settings")] // Заголовок блока настроек двери в Inspector
-    public bool isOpen = false; // Открыта ли дверь сейчас
+    [Header("Door Settings")] // Настройки двери
+    public bool isOpen = false; // Открыта ли дверь
 
-    public bool IsOpen => isOpen; // Безопасное публичное свойство только для чтения, чтобы другие скрипты (например кот) могли узнать состояние двери, не ломая старую систему
+    public bool IsOpen => isOpen; // Публичная проверка состояния двери
 
-    public DoorOpenDirection openDirection = DoorOpenDirection.Forward; // Направление открытия двери
+    public DoorOpenDirection openDirection = DoorOpenDirection.Forward; // Направление открытия
 
-    [Header("Rotation Axis")] // Заголовок блока выбора оси вращения
-    public DoorRotationAxis rotationAxis = DoorRotationAxis.Y; // Ось, по которой будет вращаться дверь
+    [Header("Rotation Axis")] // Ось вращения
+    public DoorRotationAxis rotationAxis = DoorRotationAxis.Y; // По какой оси вращается дверь
 
-    [Header("Open Angle")] // Заголовок блока угла открытия
-    public float openAngle = 90f; // На сколько градусов будет открываться дверь
+    [Header("Open Angle")] // Угол открытия
+    public float openAngle = 90f; // Угол открытия двери
 
-    [Header("Open / Close Speed")] // Заголовок блока скорости открытия и закрытия
-    public float openSpeed = 5f; // Скорость открытия двери
-    public float closeSpeed = 7f; // Скорость закрытия двери
+    [Header("Open / Close Speed")] // Скорость открытия/закрытия
+    public float openSpeed = 5f; // Скорость открытия
+    public float closeSpeed = 7f; // Скорость закрытия
 
-    [Header("Interaction")] // Заголовок блока взаимодействия
+    [Header("References")] // Ссылки
+    public Collider handleInteractZone; // Зона взаимодействия с ручкой
 
-    [Header("References")] // Заголовок блока ссылок на объекты
-   
-    public Collider handleInteractZone; // Коллайдер зоны ручки, в который должен попасть луч (под вопросом удаления)
+    [Header("Handles")] // Ручки двери
+    public Transform outsideHandle; // Внешняя ручка
+    public Transform insideHandle; // Внутренняя ручка
+    public float handleDownAngle = 20f; // Угол нажатия ручки
+    public float handlePressSpeed = 12f; // Скорость нажатия ручки
+    public float handleReturnSpeed = 10f; // Скорость возврата ручки
+    public float handleHoldTime = 0.05f; // Пауза удержания ручки
 
-    [Header("Handles")] // Заголовок блока ручек двери
-    public Transform outsideHandle; // Внешняя ручка двери
-    public Transform insideHandle; // Внутренняя ручка двери
-    public float handleDownAngle = 20f; // На сколько градусов ручки опускаются вниз
-    public float handlePressSpeed = 12f; // Скорость нажатия ручек
-    public float handleReturnSpeed = 10f; // Скорость возврата ручек
-    public float handleHoldTime = 0.05f; // Маленькая пауза, когда ручка нажата
+    [Header("Door Delay")] // Задержка двери
+    public float doorOpenDelay = 0.03f; // Задержка перед открытием
 
-    [Header("Door Delay")] // Заголовок блока задержки перед движением двери
-    public float doorOpenDelay = 0.03f; // Небольшая задержка перед началом открытия
+    [Header("Monster Access")] // Доступ монстра
+    public bool canMonsterOpen = true; // Может ли монстр открыть дверь
 
-    [Header("Monster Access")] // Заголовок блока доступа монстра
-    public bool canMonsterOpen = true; // Может ли монстр открыть эту дверь
-    [Header("Lock")]
-    public bool isLocked = false; //тру нельзя открыть, фальс можно
+    [Header("Lock")] // Блокировка двери
+    public bool isLocked = false; // true — дверь заблокирована, false — дверь доступна
 
-    [Header("Tumbler Lock")] // Заголовок блока связи двери с тумблером
-    public bool requiresTumbler = false; // Нужно ли, чтобы тумблер был включен для открытия двери
-    public TumblerSwitch requiredTumbler; // Ссылка на нужный тумблер
+    [Header("Tumbler Lock")] // Старая проверка тумблера
+    public bool requiresTumbler = false; // Нужно ли проверять тумблер
+    public TumblerSwitch requiredTumbler; // Нужный тумблер
 
-    private Quaternion closedRotation; // Закрытое вращение двери
-    private Quaternion openedRotation; // Открытое вращение двери
+    private Quaternion closedRotation; // Закрытый поворот двери
+    private Quaternion openedRotation; // Открытый поворот двери
 
     private Quaternion outsideHandleStartRotation; // Стартовый поворот внешней ручки
     private Quaternion insideHandleStartRotation; // Стартовый поворот внутренней ручки
-    private Quaternion outsideHandlePressedRotation; // Поворот внешней ручки в нажатом состоянии
-    private Quaternion insideHandlePressedRotation; // Поворот внутренней ручки в нажатом состоянии
+    private Quaternion outsideHandlePressedRotation; // Нажатый поворот внешней ручки
+    private Quaternion insideHandlePressedRotation; // Нажатый поворот внутренней ручки
 
-    private bool isBusy = false; // Защита от повторного нажатия во время анимации
+    private bool isBusy = false; // Занята ли дверь анимацией
 
-    void Start() // Метод вызывается один раз при запуске сцены
+    private void Start() // Запуск сцены
     {
-        
-        closedRotation = transform.localRotation; // Запоминаем текущее локальное вращение как закрытое
+        closedRotation = transform.localRotation; // Запоминаем закрытое положение двери
 
-        float direction = openDirection == DoorOpenDirection.Forward ? 1f : -1f; // Определяем базовое направление открытия
+        float direction = openDirection == DoorOpenDirection.Forward ? 1f : -1f; // Выбираем направление открытия
 
-        Vector3 rotationVector = Vector3.zero; // Будущий поворот по нужной оси
+        Vector3 rotationVector = Vector3.zero; // Создаём пустой вектор поворота
 
-        switch (rotationAxis) // Выбираем ось вращения
+        switch (rotationAxis) // Проверяем выбранную ось
         {
-            case DoorRotationAxis.X:
-                rotationVector = new Vector3(openAngle * direction, 0f, 0f); // Поворот по оси X
-                break;
+            case DoorRotationAxis.X: // Если ось X
+                rotationVector = new Vector3(openAngle * direction, 0f, 0f); // Поворот по X
+                break; // Выход из case
 
-            case DoorRotationAxis.Y:
-                rotationVector = new Vector3(0f, openAngle * direction, 0f); // Поворот по оси Y
-                break;
+            case DoorRotationAxis.Y: // Если ось Y
+                rotationVector = new Vector3(0f, openAngle * direction, 0f); // Поворот по Y
+                break; // Выход из case
 
-            case DoorRotationAxis.Z:
-                rotationVector = new Vector3(0f, 0f, openAngle * direction); // Поворот по оси Z
-                break;
+            case DoorRotationAxis.Z: // Если ось Z
+                rotationVector = new Vector3(0f, 0f, openAngle * direction); // Поворот по Z
+                break; // Выход из case
         }
 
-        openedRotation = closedRotation * Quaternion.Euler(rotationVector); // Вычисляем открытое вращение двери
+        openedRotation = closedRotation * Quaternion.Euler(rotationVector); // Высчитываем открытое положение двери
 
         if (outsideHandle != null) // Если внешняя ручка назначена
         {
-            outsideHandleStartRotation = outsideHandle.localRotation; // Запоминаем ее исходный поворот
-            outsideHandlePressedRotation = outsideHandleStartRotation * Quaternion.Euler(0f, 0f, -handleDownAngle); // Считаем поворот нажатой ручки
+            outsideHandleStartRotation = outsideHandle.localRotation; // Запоминаем стартовый поворот
+            outsideHandlePressedRotation = outsideHandleStartRotation * Quaternion.Euler(0f, 0f, -handleDownAngle); // Высчитываем нажатый поворот
         }
 
         if (insideHandle != null) // Если внутренняя ручка назначена
         {
-            insideHandleStartRotation = insideHandle.localRotation; // Запоминаем ее исходный поворот
-            insideHandlePressedRotation = insideHandleStartRotation * Quaternion.Euler(0f, 0f, -handleDownAngle); // Считаем поворот нажатой ручки
+            insideHandleStartRotation = insideHandle.localRotation; // Запоминаем стартовый поворот
+            insideHandlePressedRotation = insideHandleStartRotation * Quaternion.Euler(0f, 0f, -handleDownAngle); // Высчитываем нажатый поворот
         }
     }
 
-    void Update() // Метод вызывается каждый кадр
+    private void Update() // Каждый кадр
     {
-        UpdateDoorRotation(); // Плавно вращаем дверь
+        UpdateDoorRotation(); // Плавно двигаем дверь
     }
 
-    bool CanOpenDoor() // Метод проверки: можно ли открыть дверь
+    private bool CanOpenDoor() // Проверка, можно ли открыть дверь
     {
-        if (!requiresTumbler) // Если дверь не требует тумблер
+        if (!requiresTumbler) // Если тумблер не требуется
         {
-            return true; // Открывать можно всегда
+            return true; // Открывать можно
         }
 
         if (requiredTumbler == null) // Если тумблер нужен, но не назначен
@@ -125,150 +122,166 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Основные к
             return false; // Открывать нельзя
         }
 
-        return requiredTumbler.isOn; // Открыть можно только если тумблер включен
+        return requiredTumbler.isOn; // Открывать можно только если тумблер включён
     }
 
-    public void Interact() // Метод вызывается PlayerInteractor при нажатии E
-{
-    if (isBusy) return; // Если дверь сейчас занята анимацией — ничего не делаем
-    if (isLocked) return;
-
-    if (!isOpen) // Если дверь закрыта
-    {
-        if (CanOpenDoor()) // Проверяем тумблер/условия открытия
-        {
-            ToggleDoor(); // Открываем дверь
-        }
-        else // Если открыть нельзя
-        {
-
-        }
-    }
-    else // Если дверь открыта
-    {
-        ToggleDoor(); // Закрываем дверь
-    }
-}
-    public void ToggleDoor() // Универсальный метод открыть или закрыть дверь
-    {
-        if (isBusy) return; // Если дверь занята — ничего не делаем
-        StartCoroutine(InteractSequence(!isOpen)); // Запускаем корутину и передаем противоположное состояние
-    }
-
-    public void OpenDoor() // Метод открытия двери из других скриптов
+    public void Interact() // Взаимодействие игрока с дверью
     {
         if (isBusy) return; // Если дверь занята — выходим
+
+        if (isLocked) return; // Если дверь заблокирована — выходим
+
+        if (!isOpen) // Если дверь закрыта
+        {
+            if (CanOpenDoor()) // Если открыть можно
+            {
+                ToggleDoor(); // Открываем дверь
+            }
+        }
+        else // Если дверь открыта
+        {
+            ToggleDoor(); // Закрываем дверь
+        }
+    }
+
+    public void ToggleDoor() // Переключить дверь
+    {
+        if (isBusy) return; // Если дверь занята — выходим
+
+        StartCoroutine(InteractSequence(!isOpen)); // Запускаем открытие или закрытие
+    }
+
+    public void OpenDoor() // Открыть дверь из другого скрипта
+    {
+        if (isBusy) return; // Если дверь занята — выходим
+
         if (isOpen) return; // Если дверь уже открыта — выходим
 
-        if (!CanOpenDoor()) return; // Если условия открытия не выполнены — не открываем
+        if (isLocked) return; // Если дверь заблокирована — выходим
+
+        if (!CanOpenDoor()) return; // Если условия открытия не выполнены — выходим
 
         StartCoroutine(InteractSequence(true)); // Открываем дверь
     }
 
-    public void CloseDoor() // Метод закрытия двери из других скриптов
+    public void CloseDoor() // Закрыть дверь из другого скрипта
     {
         if (isBusy) return; // Если дверь занята — выходим
+
         if (!isOpen) return; // Если дверь уже закрыта — выходим
+
         StartCoroutine(InteractSequence(false)); // Закрываем дверь
     }
 
-    public void OpenDoorForMonster() // Отдельный метод открытия двери монстром
+    public void SetLocked(bool value) // Заблокировать или разблокировать дверь
     {
-        if (!canMonsterOpen) return; // Если монстру нельзя открывать эту дверь — выходим
+        isLocked = value; // Записываем состояние замка
+    }
+
+    public void OpenDoorForMonster() // Открытие двери монстром
+    {
+        if (!canMonsterOpen) return; // Если монстру нельзя открыть — выходим
+
         if (isBusy) return; // Если дверь занята — выходим
+
         if (isOpen) return; // Если дверь уже открыта — выходим
 
-        if (!CanOpenDoor()) return; // Если дверь требует тумблер и он не активирован — монстр тоже не откроет
+        if (isLocked) return; // Если дверь заблокирована — выходим
+
+        if (!CanOpenDoor()) return; // Если условия открытия не выполнены — выходим
 
         StartCoroutine(InteractSequence(true)); // Открываем дверь
     }
 
-    IEnumerator InteractSequence(bool targetOpenState) // Общая последовательность нажатия ручки и смены состояния двери
+    private IEnumerator InteractSequence(bool targetOpenState) // Последовательность открытия/закрытия
     {
-        isBusy = true; // Блокируем повторное нажатие
+        isBusy = true; // Блокируем повторные нажатия
 
-        yield return StartCoroutine(PressHandlesDown()); // Сначала опускаем ручки вниз
+        yield return StartCoroutine(PressHandlesDown()); // Опускаем ручки
 
-        if (doorOpenDelay > 0f) // Если задана задержка перед открытием
+        if (doorOpenDelay > 0f) // Если есть задержка
         {
-            yield return new WaitForSeconds(doorOpenDelay); // Ждем немного
+            yield return new WaitForSeconds(doorOpenDelay); // Ждём задержку
         }
 
-        isOpen = targetOpenState; // Меняем состояние двери на нужное
+        isOpen = targetOpenState; // Меняем состояние двери
 
-        if (handleHoldTime > 0f) // Если нужна пауза удержания ручек
+        if (handleHoldTime > 0f) // Если есть пауза ручки
         {
-            yield return new WaitForSeconds(handleHoldTime); // Держим ручки чуть-чуть нажатыми
+            yield return new WaitForSeconds(handleHoldTime); // Ждём паузу
         }
 
-        yield return StartCoroutine(ReturnHandlesBack()); // Возвращаем ручки обратно
+        yield return StartCoroutine(ReturnHandlesBack()); // Возвращаем ручки
 
-        isBusy = false; // Разрешаем следующее взаимодействие
+        isBusy = false; // Разрешаем новое взаимодействие
     }
 
-    IEnumerator PressHandlesDown() // Корутина опускания ручек вниз
+    private IEnumerator PressHandlesDown() // Нажатие ручек
     {
-        float t = 0f; // Переменная прогресса анимации
-        Quaternion outStart = outsideHandle != null ? outsideHandle.localRotation : Quaternion.identity; // Стартовая ротация внешней ручки
-        Quaternion inStart = insideHandle != null ? insideHandle.localRotation : Quaternion.identity; // Стартовая ротация внутренней ручки
+        float t = 0f; // Прогресс анимации
 
-        while (t < 1f) // Пока анимация не завершена
+        Quaternion outStart = outsideHandle != null ? outsideHandle.localRotation : Quaternion.identity; // Старт внешней ручки
+        Quaternion inStart = insideHandle != null ? insideHandle.localRotation : Quaternion.identity; // Старт внутренней ручки
+
+        while (t < 1f) // Пока анимация не закончилась
         {
-            t += Time.deltaTime * handlePressSpeed; // Увеличиваем прогресс в зависимости от времени и скорости
+            t += Time.deltaTime * handlePressSpeed; // Увеличиваем прогресс
 
-            if (outsideHandle != null) // Если внешняя ручка существует
+            if (outsideHandle != null) // Если внешняя ручка есть
             {
-                outsideHandle.localRotation = Quaternion.Lerp(outStart, outsideHandlePressedRotation, t); // Плавно поворачиваем ее вниз
+                outsideHandle.localRotation = Quaternion.Lerp(outStart, outsideHandlePressedRotation, t); // Опускаем внешнюю ручку
             }
 
-            if (insideHandle != null) // Если внутренняя ручка существует
+            if (insideHandle != null) // Если внутренняя ручка есть
             {
-                insideHandle.localRotation = Quaternion.Lerp(inStart, insideHandlePressedRotation, t); // Плавно поворачиваем ее вниз
+                insideHandle.localRotation = Quaternion.Lerp(inStart, insideHandlePressedRotation, t); // Опускаем внутреннюю ручку
             }
 
-            yield return null; // Ждем следующий кадр
+            yield return null; // Ждём следующий кадр
         }
 
-        if (outsideHandle != null) outsideHandle.localRotation = outsideHandlePressedRotation; // Жестко ставим внешнюю ручку в финальное положение
-        if (insideHandle != null) insideHandle.localRotation = insideHandlePressedRotation; // Жестко ставим внутреннюю ручку в финальное положение
+        if (outsideHandle != null) outsideHandle.localRotation = outsideHandlePressedRotation; // Фиксируем внешнюю ручку
+        if (insideHandle != null) insideHandle.localRotation = insideHandlePressedRotation; // Фиксируем внутреннюю ручку
     }
 
-    IEnumerator ReturnHandlesBack() // Корутина возврата ручек в исходное положение
+    private IEnumerator ReturnHandlesBack() // Возврат ручек
     {
-        float t = 0f; // Переменная прогресса анимации
-        Quaternion outStart = outsideHandle != null ? outsideHandle.localRotation : Quaternion.identity; // Стартовое положение внешней ручки
-        Quaternion inStart = insideHandle != null ? insideHandle.localRotation : Quaternion.identity; // Стартовое положение внутренней ручки
+        float t = 0f; // Прогресс анимации
 
-        while (t < 1f) // Пока возврат не завершен
+        Quaternion outStart = outsideHandle != null ? outsideHandle.localRotation : Quaternion.identity; // Текущий поворот внешней ручки
+        Quaternion inStart = insideHandle != null ? insideHandle.localRotation : Quaternion.identity; // Текущий поворот внутренней ручки
+
+        while (t < 1f) // Пока анимация не закончилась
         {
-            t += Time.deltaTime * handleReturnSpeed; // Увеличиваем прогресс возврата
+            t += Time.deltaTime * handleReturnSpeed; // Увеличиваем прогресс
 
-            if (outsideHandle != null) // Если внешняя ручка существует
+            if (outsideHandle != null) // Если внешняя ручка есть
             {
-                outsideHandle.localRotation = Quaternion.Lerp(outStart, outsideHandleStartRotation, t); // Возвращаем внешнюю ручку назад
+                outsideHandle.localRotation = Quaternion.Lerp(outStart, outsideHandleStartRotation, t); // Возвращаем внешнюю ручку
             }
 
-            if (insideHandle != null) // Если внутренняя ручка существует
+            if (insideHandle != null) // Если внутренняя ручка есть
             {
-                insideHandle.localRotation = Quaternion.Lerp(inStart, insideHandleStartRotation, t); // Возвращаем внутреннюю ручку назад
+                insideHandle.localRotation = Quaternion.Lerp(inStart, insideHandleStartRotation, t); // Возвращаем внутреннюю ручку
             }
 
-            yield return null; // Ждем следующий кадр
+            yield return null; // Ждём следующий кадр
         }
 
-        if (outsideHandle != null) outsideHandle.localRotation = outsideHandleStartRotation; // Жестко ставим внешнюю ручку в стартовое положение
-        if (insideHandle != null) insideHandle.localRotation = insideHandleStartRotation; // Жестко ставим внутреннюю ручку в стартовое положение
+        if (outsideHandle != null) outsideHandle.localRotation = outsideHandleStartRotation; // Фиксируем внешнюю ручку
+        if (insideHandle != null) insideHandle.localRotation = insideHandleStartRotation; // Фиксируем внутреннюю ручку
     }
 
-    void UpdateDoorRotation() // Метод плавного вращения двери
+    private void UpdateDoorRotation() // Плавное вращение двери
     {
-        Quaternion target = isOpen ? openedRotation : closedRotation; // Выбираем целевую ротацию: открытая или закрытая
-        float speed = isOpen ? openSpeed : closeSpeed; // Выбираем скорость открытия или закрытия
+        Quaternion target = isOpen ? openedRotation : closedRotation; // Выбираем цель: открыто или закрыто
+
+        float speed = isOpen ? openSpeed : closeSpeed; // Выбираем скорость
 
         transform.localRotation = Quaternion.Slerp( // Плавно вращаем дверь
-            transform.localRotation, // Из текущего вращения
-            target, // В целевое вращение
-            Time.deltaTime * speed // С учетом времени кадра и скорости
+            transform.localRotation, // От текущего поворота
+            target, // К целевому повороту
+            Time.deltaTime * speed // С учётом времени
         );
     }
 }
