@@ -1,77 +1,100 @@
 using UnityEngine; // Подключаем базовые функции Unity
 
-public class DrawerInteract : MonoBehaviour, IInteractable // Скрипт для выдвижения ящика через PlayerInteractor
+public class DrawerInteract : MonoBehaviour, IInteractable // Скрипт для выдвижения ящика
 {
-    public enum SlideDirection // Создаем список вариантов направления
+    public enum SlideDirection // Список направлений движения ящика
     {
-        Forward, // Вперед по локальной оси Z
-        Back, // Назад по локальной оси Z
-        Right, // Вправо по локальной оси X
-        Left // Влево по локальной оси X
+        Forward, // Вперед по локальной Z
+        Back, // Назад по локальной Z
+        Right, // Вправо по локальной X
+        Left // Влево по локальной X
     }
 
-    [Header("Drawer Movement Settings")] // Заголовок блока настроек движения
-    public float slideDistance = 0.4f; // Насколько далеко выдвигать ящик
+    [Header("Drawer Movement Settings")] // Блок движения
+    public float slideDistance = 0.4f; // Дистанция выдвижения ящика
 
-    public float moveSpeed = 3f; // Скорость движения
+    public float moveSpeed = 3f; // Скорость движения ящика
 
-    public SlideDirection slideDirection = SlideDirection.Back; // Направление выезда
+    public SlideDirection slideDirection = SlideDirection.Back; // Направление выезда ящика
 
-    private Vector3 closedLocalPosition; // Позиция закрытого ящика
+    [Header("Noise")] // Блок шума
+    public NoiseEmitter noiseEmitter; // Источник шума ящика
 
-    private Vector3 openLocalPosition; // Позиция открытого ящика
+    [Range(1, 10)] public int openNoisePower = 3; // Шум открытия ящика
 
-    private Vector3 targetLocalPosition; // Целевая позиция
+    [Range(1, 10)] public int closeNoisePower = 2; // Шум закрытия ящика
+
+    private Vector3 closedLocalPosition; // Закрытая локальная позиция
+
+    private Vector3 openLocalPosition; // Открытая локальная позиция
+
+    private Vector3 targetLocalPosition; // Целевая локальная позиция
 
     private bool isOpen = false; // Открыт ли ящик
 
-    void Start() // Выполняется один раз при старте
+    void Start() // Запуск сцены
     {
-        closedLocalPosition = transform.localPosition; // Запоминаем текущую позицию как закрытую
+        closedLocalPosition = transform.localPosition; // Запоминаем закрытую позицию
 
-        openLocalPosition = closedLocalPosition + GetSlideVector() * slideDistance; // Считаем позицию открытия
+        openLocalPosition = closedLocalPosition + GetSlideVector() * slideDistance; // Считаем открытую позицию
 
-        targetLocalPosition = closedLocalPosition; // В начале цель = закрытая позиция
+        targetLocalPosition = closedLocalPosition; // В начале цель — закрытая позиция
+
+        if (noiseEmitter == null) // Если NoiseEmitter не назначен вручную
+        {
+            noiseEmitter = GetComponent<NoiseEmitter>(); // Пробуем найти NoiseEmitter на этом же объекте
+        }
     }
 
-    void Update() // Выполняется каждый кадр
+    void Update() // Каждый кадр
     {
         transform.localPosition = Vector3.Lerp( // Плавно двигаем ящик
-            transform.localPosition, // Из текущей позиции
-            targetLocalPosition, // В нужную позицию
-            Time.deltaTime * moveSpeed // С учетом времени кадра и скорости
+            transform.localPosition, // От текущей позиции
+            targetLocalPosition, // К целевой позиции
+            Time.deltaTime * moveSpeed // С учетом скорости и времени
         );
     }
 
-    public void Interact() // Вызывается PlayerInteractor при нажатии E
+    public void Interact() // Вызывается PlayerInteractor при E
     {
-        ToggleDrawer(); // Открываем или закрываем ящик
+        ToggleDrawer(); // Переключаем ящик
     }
 
-    void ToggleDrawer() // Метод переключения состояния ящика
+    void ToggleDrawer() // Метод открытия/закрытия
     {
         isOpen = !isOpen; // Меняем состояние на противоположное
 
-        targetLocalPosition = isOpen ? openLocalPosition : closedLocalPosition; // Выбираем нужную позицию
+        targetLocalPosition = isOpen ? openLocalPosition : closedLocalPosition; // Выбираем позицию
+
+        EmitDrawerNoise(); // Создаем шум ящика
     }
 
-    Vector3 GetSlideVector() // Метод возвращает направление движения
+    void EmitDrawerNoise() // Метод шума ящика
+    {
+        if (noiseEmitter == null) return; // Если NoiseEmitter нет — выходим
+
+        int noisePower = isOpen ? openNoisePower : closeNoisePower; // Если открываем — openNoisePower, если закрываем — closeNoisePower
+
+        noiseEmitter.EmitNoise(noisePower); // Отправляем шум
+    }
+
+    Vector3 GetSlideVector() // Получить направление движения
     {
         switch (slideDirection) // Проверяем выбранное направление
         {
-            case SlideDirection.Forward: // Если выбрано Forward
+            case SlideDirection.Forward: // Если Forward
                 return Vector3.forward; // Возвращаем вперед
 
-            case SlideDirection.Back: // Если выбрано Back
+            case SlideDirection.Back: // Если Back
                 return Vector3.back; // Возвращаем назад
 
-            case SlideDirection.Right: // Если выбрано Right
+            case SlideDirection.Right: // Если Right
                 return Vector3.right; // Возвращаем вправо
 
-            case SlideDirection.Left: // Если выбрано Left
+            case SlideDirection.Left: // Если Left
                 return Vector3.left; // Возвращаем влево
 
-            default: // Если вдруг что-то пошло не так
+            default: // Если что-то пошло не так
                 return Vector3.back; // По умолчанию назад
         }
     }

@@ -49,6 +49,12 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Универсал�
 
     [Header("Monster Access")] // Доступ монстра
     public bool canMonsterOpen = true; // Может ли монстр открыть дверь
+        [Header("Noise")] // Заголовок шума двери
+    public NoiseEmitter noiseEmitter; // Источник шума двери
+
+    [Range(1, 10)] public int openNoisePower = 3; // Шум открытия двери
+
+    [Range(1, 10)] public int closeNoisePower = 4; // Шум закрытия двери
 
     [Header("Lock")] // Блокировка двери
     public bool isLocked = false; // true — дверь заблокирована, false — дверь доступна
@@ -103,7 +109,12 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Универсал�
             insideHandleStartRotation = insideHandle.localRotation; // Запоминаем стартовый поворот
             insideHandlePressedRotation = insideHandleStartRotation * Quaternion.Euler(0f, 0f, -handleDownAngle); // Высчитываем нажатый поворот
         }
+        if (noiseEmitter == null) // Если NoiseEmitter не назначен вручную
+        {
+            noiseEmitter = GetComponent<NoiseEmitter>(); // Пробуем найти NoiseEmitter на этом же объекте
+        }
     }
+        
 
     private void Update() // Каждый кадр
     {
@@ -177,6 +188,34 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Универсал�
     {
         isLocked = value; // Записываем состояние замка
     }
+    public void UnlockDoor() // Метод для разблокировки двери через UnityEvent
+    {
+    isLocked = false; // Снимаем блокировку с двери
+    }
+
+    public void LockDoor() // Метод для блокировки двери через UnityEvent
+    {
+    isLocked = true; // Включаем блокировку двери
+    }
+
+    public void SetMonsterCanOpen(bool value) // Метод настройки доступа монстра через UnityEvent
+    {
+    canMonsterOpen = value; // Разрешаем или запрещаем монстру открывать дверь
+    }
+
+    public void UnlockDoorAndBlockMonster() // Разблокировать дверь для игрока, но запретить монстру
+    {
+    isLocked = false; // Снимаем блокировку двери
+
+    canMonsterOpen = false; // Запрещаем монстру открывать эту дверь
+    }
+
+    public void UnlockDoorAndAllowMonster() // Разблокировать дверь и разрешить монстру
+    {
+    isLocked = false; // Снимаем блокировку двери
+
+    canMonsterOpen = true; // Разрешаем монстру открывать эту дверь
+    }
 
     public void OpenDoorForMonster() // Открытие двери монстром
     {
@@ -205,6 +244,7 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Универсал�
         }
 
         isOpen = targetOpenState; // Меняем состояние двери
+        EmitDoorNoise(targetOpenState); // Создаём шум открытия или закрытия двери
 
         if (handleHoldTime > 0f) // Если есть пауза ручки
         {
@@ -283,5 +323,13 @@ public class UniversalDoor : MonoBehaviour, IInteractable // Универсал�
             target, // К целевому повороту
             Time.deltaTime * speed // С учётом времени
         );
+    }
+    private void EmitDoorNoise(bool targetOpenState) // Метод шума двери
+    {
+        if (noiseEmitter == null) return; // Если источника шума нет — выходим
+
+    int noisePower = targetOpenState ? openNoisePower : closeNoisePower; // Если открываем — шум открытия, если закрываем — шум закрытия
+
+    noiseEmitter.EmitNoise(noisePower); // Отправляем шум в NoiseEmitter
     }
 }

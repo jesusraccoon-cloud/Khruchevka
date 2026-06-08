@@ -746,6 +746,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3226978559749552879}
+  - component: {fileID: 8632248676660233116}
   m_Layer: 0
   m_Name: ClosetDoor
   m_TagString: Untagged
@@ -770,6 +771,25 @@ Transform:
   - {fileID: 6117186803144883612}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+--- !u!114 &8632248676660233116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4672256561542704482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75caa3bb8e4b8fa4aadcba6c1bec2b24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  noiseManager: {fileID: 0}
+  sourceRoomTracker: {fileID: 0}
+  fixedRoom: {fileID: 0}
+  noiseMeterUI: {fileID: 0}
+  noisePower: 5
+  showNoiseOnUI: 1
+  showDebugLogs: 0
 --- !u!1 &4767926493935518737
 GameObject:
   m_ObjectHideFlags: 0
@@ -1164,6 +1184,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6117186803144883612}
   - component: {fileID: 3452538254984189245}
+  - component: {fileID: 657540866035391396}
   m_Layer: 0
   m_Name: DoorHinge
   m_TagString: Untagged
@@ -1201,15 +1222,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isOpen: 0
   openDirection: 0
+  rotationAxis: 1
   openAngle: 90
   openSpeed: 1
   closeSpeed: 1
-  interactDistance: 1.5
-  interactKey: 101
-  interactLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  defaultOpener: {fileID: 0}
   handleInteractZone: {fileID: 5994103446473850575}
   outsideHandle: {fileID: 643481089464964289}
   insideHandle: {fileID: 6546434947030143318}
@@ -1219,6 +1235,31 @@ MonoBehaviour:
   handleHoldTime: 0.05
   doorOpenDelay: 0.03
   canMonsterOpen: 1
+  noiseEmitter: {fileID: 0}
+  openNoisePower: 3
+  closeNoisePower: 4
+  isLocked: 0
+  requiresTumbler: 0
+  requiredTumbler: {fileID: 0}
+--- !u!114 &657540866035391396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5092005229148171589}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75caa3bb8e4b8fa4aadcba6c1bec2b24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  noiseManager: {fileID: 0}
+  sourceRoomTracker: {fileID: 0}
+  fixedRoom: {fileID: 0}
+  noiseMeterUI: {fileID: 0}
+  noisePower: 5
+  showNoiseOnUI: 1
+  showDebugLogs: 0
 --- !u!1 &5493163441120935083
 GameObject:
   m_ObjectHideFlags: 0

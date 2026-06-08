@@ -1,242 +1,229 @@
-﻿using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
+﻿using UnityEngine; // Подключаем Unity-классы
+#if ENABLE_INPUT_SYSTEM // Проверяем, включена ли новая Input System
+using UnityEngine.InputSystem; // Подключаем PlayerInput из новой Input System
+#endif // Конец проверки Input System
 
-namespace StarterAssets
+namespace StarterAssets // Пространство имён StarterAssets
 {
-	[RequireComponent(typeof(CharacterController))]
-#if ENABLE_INPUT_SYSTEM
-	[RequireComponent(typeof(PlayerInput))]
-#endif
-	public class FirstPersonController : MonoBehaviour
-	{
-		[Header("Player")]
-		[Tooltip("Move speed of the character in m/s")]
-		public float MoveSpeed = 4.0f;
-		[Tooltip("Sprint speed of the character in m/s")]
-		public float SprintSpeed = 6.0f;
-		[Tooltip("Rotation speed of the character")]
-		public float RotationSpeed = 1.0f;
-		[Tooltip("Acceleration and deceleration")]
-		public float SpeedChangeRate = 10.0f;
+    [RequireComponent(typeof(CharacterController))] // Требуем CharacterController на объекте игрока
+#if ENABLE_INPUT_SYSTEM // Если включена новая Input System
+    [RequireComponent(typeof(PlayerInput))] // Требуем PlayerInput на объекте игрока
+#endif // Конец проверки Input System
+    public class FirstPersonController : MonoBehaviour // Основной контроллер игрока от первого лица
+    {
+        [Header("Player")] // Блок настроек игрока
+        public float MoveSpeed = 4.0f; // Скорость ходьбы
+        public float SprintSpeed = 6.0f; // Скорость бега
+        public float RotationSpeed = 1.0f; // Скорость поворота камеры
+        public float SpeedChangeRate = 10.0f; // Скорость разгона и торможения
 
-		[Space(10)]
-		[Tooltip("The height the player can jump")]
-		public float JumpHeight = 1.2f;
-		[Tooltip("The character uses its own gravity value. The engine default is -9.81f")]
-		public float Gravity = -15.0f;
+        [Space(10)] // Отступ в Inspector
+        public float JumpHeight = 1.2f; // Высота прыжка
+        public float Gravity = -15.0f; // Сила гравитации
 
-		[Space(10)]
-		[Tooltip("Time required to pass before being able to jump again. Set to 0f to instantly jump again")]
-		public float JumpTimeout = 0.1f;
-		[Tooltip("Time required to pass before entering the fall state. Useful for walking down stairs")]
-		public float FallTimeout = 0.15f;
+        [Space(10)] // Отступ в Inspector
+        public float JumpTimeout = 0.1f; // Задержка перед следующим прыжком
+        public float FallTimeout = 0.15f; // Задержка перед падением
 
-		[Header("Player Grounded")]
-		[Tooltip("If the character is grounded or not. Not part of the CharacterController built in grounded check")]
-		public bool Grounded = true;
-		[Tooltip("Useful for rough ground")]
-		public float GroundedOffset = -0.14f;
-		[Tooltip("The radius of the grounded check. Should match the radius of the CharacterController")]
-		public float GroundedRadius = 0.5f;
-		[Tooltip("What layers the character uses as ground")]
-		public LayerMask GroundLayers;
+        [Header("Player Grounded")] // Блок проверки земли
+        public bool Grounded = true; // Стоит ли игрок на земле
+        public float GroundedOffset = -0.14f; // Смещение сферы проверки земли
+        public float GroundedRadius = 0.5f; // Радиус проверки земли
+        public LayerMask GroundLayers; // Слои, которые считаются землей
 
-		[Header("Cinemachine")]
-		[Tooltip("The follow target set in the Cinemachine Virtual Camera that the camera will follow")]
-		public GameObject CinemachineCameraTarget;
-		[Tooltip("How far in degrees can you move the camera up")]
-		public float TopClamp = 90.0f;
-		[Tooltip("How far in degrees can you move the camera down")]
-		public float BottomClamp = -90.0f;
+        [Header("Cinemachine")] // Блок камеры
+        public GameObject CinemachineCameraTarget; // Объект, за которым следует камера
+        public float TopClamp = 90.0f; // Максимальный угол взгляда вверх
+        public float BottomClamp = -90.0f; // Максимальный угол взгляда вниз
 
-		[Header("QTE Lock")]
-		public bool canMove = true; // Можно ли двигаться
-		public bool canLook = true; // Можно ли крутить камерой
+        [Header("QTE Lock")] // Блок блокировки управления
+        public bool canMove = true; // Можно ли игроку двигаться
+        public bool canLook = true; // Можно ли игроку крутить камерой
 
-		private float _cinemachineTargetPitch;
+        private float _cinemachineTargetPitch; // Текущий вертикальный угол камеры
+        private float _speed; // Текущая скорость игрока
+        private float _rotationVelocity; // Скорость поворота игрока
+        private float _verticalVelocity; // Вертикальная скорость игрока
+        private float _terminalVelocity = 53.0f; // Максимальная скорость падения
 
-		private float _speed;
-		private float _rotationVelocity;
-		private float _verticalVelocity;
-		private float _terminalVelocity = 53.0f;
+        private float _jumpTimeoutDelta; // Текущий таймер задержки прыжка
+        private float _fallTimeoutDelta; // Текущий таймер задержки падения
 
-		private float _jumpTimeoutDelta;
-		private float _fallTimeoutDelta;
+#if ENABLE_INPUT_SYSTEM // Если включена новая Input System
+        private PlayerInput _playerInput; // Ссылка на PlayerInput
+#endif // Конец проверки Input System
 
-#if ENABLE_INPUT_SYSTEM
-		private PlayerInput _playerInput;
-#endif
-		private CharacterController _controller;
-		private StarterAssetsInputs _input;
-		private GameObject _mainCamera;
+        private CharacterController _controller; // Ссылка на CharacterController
+        private StarterAssetsInputs _input; // Ссылка на ввод StarterAssets
+        private GameObject _mainCamera; // Ссылка на главную камеру
 
-		private const float _threshold = 0.01f;
+        private const float _threshold = 0.01f; // Минимальный порог движения мыши/стика
 
-		private bool IsCurrentDeviceMouse
-		{
-			get
-			{
-#if ENABLE_INPUT_SYSTEM
-				return _playerInput.currentControlScheme == "KeyboardMouse";
-#else
-				return false;
-#endif
-			}
-		}
+        private bool IsCurrentDeviceMouse // Проверка, используется ли мышь
+        {
+            get // Получение значения
+            {
+#if ENABLE_INPUT_SYSTEM // Если включена новая Input System
+                return _playerInput.currentControlScheme == "KeyboardMouse"; // true, если используется мышь и клавиатура
+#else // Если новая Input System не включена
+                return false; // Возвращаем false
+#endif // Конец проверки Input System
+            }
+        }
 
-		private void Awake()
-		{
-			if (_mainCamera == null)
-			{
-				_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-			}
-		}
+        private void Awake() // Вызывается при создании объекта
+        {
+            if (_mainCamera == null) // Если главная камера ещё не найдена
+            {
+                _mainCamera = GameObject.FindGameObjectWithTag("MainCamera"); // Ищем объект с тегом MainCamera
+            }
+        }
 
-		private void Start()
-		{
-			_controller = GetComponent<CharacterController>();
-			_input = GetComponent<StarterAssetsInputs>();
+        private void Start() // Вызывается перед первым кадром
+        {
+            _controller = GetComponent<CharacterController>(); // Получаем CharacterController
+            _input = GetComponent<StarterAssetsInputs>(); // Получаем StarterAssetsInputs
 
-#if ENABLE_INPUT_SYSTEM
-			_playerInput = GetComponent<PlayerInput>();
-#else
-			Debug.LogError("Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
-#endif
+#if ENABLE_INPUT_SYSTEM // Если включена новая Input System
+            _playerInput = GetComponent<PlayerInput>(); // Получаем PlayerInput
+#else // Если Input System отсутствует
+            Debug.LogError("Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it"); // Пишем ошибку
+#endif // Конец проверки Input System
 
-			_jumpTimeoutDelta = JumpTimeout;
-			_fallTimeoutDelta = FallTimeout;
-		}
+            _jumpTimeoutDelta = JumpTimeout; // Инициализируем таймер прыжка
+            _fallTimeoutDelta = FallTimeout; // Инициализируем таймер падения
+        }
 
-		private void Update()
-		{
-			JumpAndGravity();
-			GroundedCheck();
+        private void Update() // Вызывается каждый кадр
+        {
+            JumpAndGravity(); // Обрабатываем прыжок и гравитацию
+            GroundedCheck(); // Проверяем землю
 
-			if (canMove) // Если движение разрешено
-			{
-				Move(); // Двигаем игрока
-			}
-		}
+            if (canMove) // Если движение разрешено
+            {
+                Move(); // Двигаем игрока
+            }
+        }
 
-		private void LateUpdate()
-		{
-			if (canLook) // Если обзор разрешён
-			{
-				CameraRotation(); // Крутим камеру
-			}
-		}
+        private void LateUpdate() // Вызывается после Update
+        {
+            if (canLook) // Если обзор разрешён
+            {
+                CameraRotation(); // Крутим камеру
+            }
+        }
 
-		private void GroundedCheck()
-		{
-			Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
-			Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
-		}
+        private void GroundedCheck() // Проверка земли
+        {
+            Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z); // Создаём позицию сферы проверки
 
-		private void CameraRotation()
-		{
-			if (_input.look.sqrMagnitude >= _threshold)
-			{
-				float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
+            Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore); // Проверяем касание земли
+        }
 
-				_cinemachineTargetPitch += _input.look.y * RotationSpeed * deltaTimeMultiplier;
-				_rotationVelocity = _input.look.x * RotationSpeed * deltaTimeMultiplier;
+        private void CameraRotation() // Поворот камеры
+        {
+            if (_input.look.sqrMagnitude >= _threshold) // Если есть ввод поворота
+            {
+                float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime; // Для мыши не умножаем на deltaTime
 
-				_cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
+                _cinemachineTargetPitch += _input.look.y * RotationSpeed * deltaTimeMultiplier; // Меняем вертикальный угол камеры
+                _rotationVelocity = _input.look.x * RotationSpeed * deltaTimeMultiplier; // Считаем горизонтальный поворот
 
-				CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f);
+                _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp); // Ограничиваем вертикальный угол
 
-				transform.Rotate(Vector3.up * _rotationVelocity);
-			}
-		}
+                CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f); // Поворачиваем цель камеры
 
-		private void Move()
-		{
-			float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+                transform.Rotate(Vector3.up * _rotationVelocity); // Поворачиваем игрока по горизонтали
+            }
+        }
 
-			if (_input.move == Vector2.zero) targetSpeed = 0.0f;
+        private void Move() // Метод движения игрока
+        {
+            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed; // Выбираем скорость: бег или ходьба
 
-			float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
+            if (_input.move == Vector2.zero) targetSpeed = 0.0f; // Если ввода движения нет — скорость 0
 
-			float speedOffset = 0.1f;
-			float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
+            float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude; // Считаем горизонтальную скорость
 
-			if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
-			{
-				_speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
-				_speed = Mathf.Round(_speed * 1000f) / 1000f;
-			}
-			else
-			{
-				_speed = targetSpeed;
-			}
+            float speedOffset = 0.1f; // Небольшой допуск скорости
+            float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f; // Сила ввода
 
-			Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+            if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset) // Если скорость отличается
+            {
+                _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate); // Плавно меняем скорость
+                _speed = Mathf.Round(_speed * 1000f) / 1000f; // Округляем скорость
+            }
+            else // Если скорость уже близка
+            {
+                _speed = targetSpeed; // Ставим целевую скорость
+            }
 
-			if (_input.move != Vector2.zero)
-			{
-				inputDirection = transform.right * _input.move.x + transform.forward * _input.move.y;
-			}
+            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized; // Создаём направление ввода
 
-			_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
-		}
+            if (_input.move != Vector2.zero) // Если игрок нажимает движение
+            {
+                inputDirection = transform.right * _input.move.x + transform.forward * _input.move.y; // Переводим направление в локальные оси игрока
+            }
 
-		private void JumpAndGravity()
-		{
-			if (Grounded)
-			{
-				_fallTimeoutDelta = FallTimeout;
+            _controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime); // Двигаем CharacterController
+        }
 
-				if (_verticalVelocity < 0.0f)
-				{
-					_verticalVelocity = -2f;
-				}
+        private void JumpAndGravity() // Прыжок и гравитация
+        {
+            if (Grounded) // Если игрок на земле
+            {
+                _fallTimeoutDelta = FallTimeout; // Сбрасываем таймер падения
 
-				if (_input.jump && _jumpTimeoutDelta <= 0.0f)
-				{
-					_verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-				}
+                if (_verticalVelocity < 0.0f) // Если вертикальная скорость вниз
+                {
+                    _verticalVelocity = -2f; // Прижимаем игрока к земле
+                }
 
-				if (_jumpTimeoutDelta >= 0.0f)
-				{
-					_jumpTimeoutDelta -= Time.deltaTime;
-				}
-			}
-			else
-			{
-				_jumpTimeoutDelta = JumpTimeout;
+                if (_input.jump && _jumpTimeoutDelta <= 0.0f && canMove) // Если нажали прыжок и можно прыгать
+                {
+                    _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity); // Задаём вертикальную скорость прыжка
+                }
 
-				if (_fallTimeoutDelta >= 0.0f)
-				{
-					_fallTimeoutDelta -= Time.deltaTime;
-				}
+                if (_jumpTimeoutDelta >= 0.0f) // Если таймер прыжка ещё идёт
+                {
+                    _jumpTimeoutDelta -= Time.deltaTime; // Уменьшаем таймер прыжка
+                }
+            }
+            else // Если игрок не на земле
+            {
+                _jumpTimeoutDelta = JumpTimeout; // Сбрасываем таймер прыжка
 
-				_input.jump = false;
-			}
+                if (_fallTimeoutDelta >= 0.0f) // Если таймер падения ещё идёт
+                {
+                    _fallTimeoutDelta -= Time.deltaTime; // Уменьшаем таймер падения
+                }
 
-			if (_verticalVelocity < _terminalVelocity)
-			{
-				_verticalVelocity += Gravity * Time.deltaTime;
-			}
-		}
+                _input.jump = false; // Сбрасываем ввод прыжка
+            }
 
-		private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
-		{
-			if (lfAngle < -360f) lfAngle += 360f;
-			if (lfAngle > 360f) lfAngle -= 360f;
-			return Mathf.Clamp(lfAngle, lfMin, lfMax);
-		}
+            if (_verticalVelocity < _terminalVelocity) // Если вертикальная скорость меньше максимальной
+            {
+                _verticalVelocity += Gravity * Time.deltaTime; // Добавляем гравитацию
+            }
+        }
 
-		private void OnDrawGizmosSelected()
-		{
-			Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
-			Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
+        private static float ClampAngle(float lfAngle, float lfMin, float lfMax) // Метод ограничения угла
+        {
+            if (lfAngle < -360f) lfAngle += 360f; // Нормализуем слишком маленький угол
+            if (lfAngle > 360f) lfAngle -= 360f; // Нормализуем слишком большой угол
 
-			if (Grounded) Gizmos.color = transparentGreen;
-			else Gizmos.color = transparentRed;
+            return Mathf.Clamp(lfAngle, lfMin, lfMax); // Ограничиваем угол
+        }
 
-			Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
-		}
-	}
+        private void OnDrawGizmosSelected() // Рисуется в Scene, когда объект выбран
+        {
+            Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f); // Полупрозрачный зелёный
+            Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f); // Полупрозрачный красный
+
+            if (Grounded) Gizmos.color = transparentGreen; // Если на земле — зелёный
+            else Gizmos.color = transparentRed; // Если не на земле — красный
+
+            Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius); // Рисуем сферу проверки земли
+        }
+    }
 }

@@ -2405,6 +2405,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4976187191371365883}
   - component: {fileID: 3379301803158607882}
+  - component: {fileID: 6550154094260185928}
   m_Layer: 0
   m_Name: DoorHinge
   m_TagString: Untagged
@@ -2442,15 +2443,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isOpen: 0
   openDirection: 0
+  rotationAxis: 1
   openAngle: 90
   openSpeed: 1
   closeSpeed: 1
-  interactDistance: 1.5
-  interactKey: 101
-  interactLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  defaultOpener: {fileID: 0}
   handleInteractZone: {fileID: 7746599525513144783}
   outsideHandle: {fileID: 320636299527857434}
   insideHandle: {fileID: 8982004600689337580}
@@ -2460,3 +2456,28 @@ MonoBehaviour:
   handleHoldTime: 0.05
   doorOpenDelay: 0.03
   canMonsterOpen: 1
+  noiseEmitter: {fileID: 0}
+  openNoisePower: 3
+  closeNoisePower: 4
+  isLocked: 0
+  requiresTumbler: 0
+  requiredTumbler: {fileID: 0}
+--- !u!114 &6550154094260185928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9123375242484910785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75caa3bb8e4b8fa4aadcba6c1bec2b24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  noiseManager: {fileID: 0}
+  sourceRoomTracker: {fileID: 0}
+  fixedRoom: {fileID: 0}
+  noiseMeterUI: {fileID: 0}
+  noisePower: 5
+  showNoiseOnUI: 1
+  showDebugLogs: 0

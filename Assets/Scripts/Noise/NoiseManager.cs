@@ -96,24 +96,26 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
         MakeNoise(noisePosition, noisePower, sourceRoom); // Вызываем основной метод шума
     }
 
-    private void TrySendNoiseToMonster(Vector3 noisePosition, int finalNoise) // Проверка реакции монстра
+    private void TrySendNoiseToMonster(Vector3 noisePosition, int finalNoise) // Проверка реакции монстра на итоговый шум
     {
-        if (finalNoise < investigateThreshold) // Если шум слабее порога
-        {
-            if (showDebugLogs) // Если отладка включена
-            {
-                Debug.Log("Монстр НЕ пошёл на шум. Итоговый шум: " + finalNoise); // Пишем в Console
-            }
+    finalNoise = Mathf.Clamp(finalNoise, 0, 10); // Ограничиваем итоговый шум от 0 до 10
 
-            return; // Выходим
-        }
-
+    if (finalNoise <= 3) // Если шум 0-3
+    {
         if (showDebugLogs) // Если отладка включена
         {
-            Debug.Log("Монстр услышал шум и идёт проверять. Итоговый шум: " + finalNoise); // Пишем в Console
+            Debug.Log("Монстр игнорирует шум. Итоговый шум: " + finalNoise); // Лог
         }
 
-        monster.HearNoise(noisePosition); // Отправляем монстра к позиции шума
+        return; // Ничего не делаем
+    }
+
+        if (showDebugLogs) // Если отладка включена
+    {
+        Debug.Log("Монстр реагирует на шум. Итоговый шум: " + finalNoise); // Лог
+    }
+
+        monster.ReactToNoise(noisePosition, finalNoise); // Передаём монстру позицию и силу шума
     }
 
     private float GetVolumeMultiplier(string fromRoom, string toRoom) // Получить множитель между комнатами
