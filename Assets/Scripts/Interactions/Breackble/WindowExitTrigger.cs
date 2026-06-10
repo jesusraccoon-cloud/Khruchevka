@@ -2,7 +2,7 @@ using UnityEngine; // Подключаем Unity-классы
 
 public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт выхода через разбитое окно
 {
-    public BreakableWindow breakableWindow; // Ссылка на разбиваемое окно
+    public BreakableObject breakableWindow; // Ссылка на универсальный BreakableObject окна
 
     public Transform exitPoint; // Точка, куда переносим игрока
 
@@ -31,9 +31,9 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
     {
         if (exitUsed) return; // Если окно уже использовали — выходим
 
-        if (breakableWindow == null) return; // Если окно не назначено — выходим
+        if (breakableWindow == null) return; // Если BreakableObject окна не назначен — выходим
 
-        if (!breakableWindow.IsBroken) return; // Если окно не разбито — выходим
+        if (!breakableWindow.IsBroken) return; // Если окно ещё не разбито — выходим
 
         if (exitPoint == null) return; // Если точка выхода не назначена — выходим
 
@@ -43,27 +43,27 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
 
         if (blockedPoint == null) return; // Если BlockedPoint не назначен — выходим
 
-        if (!IsPlayerOnAllowedSide()) return; // Если игрок не с разрешенной стороны — выходим
+        if (!IsPlayerOnAllowedSide()) return; // Если игрок не с разрешённой стороны — выходим
 
         TeleportPlayer(); // Переносим игрока
     }
 
-    private bool IsPlayerOnAllowedSide() // Проверяем, находится ли игрок с разрешенной стороны
+    private bool IsPlayerOnAllowedSide() // Проверяем, находится ли игрок с разрешённой стороны
     {
-        Vector3 playerPosition = characterController.transform.position; // Берем позицию игрока
+        Vector3 playerPosition = characterController.transform.position; // Берём позицию игрока
 
-        float distanceToAllowed = Vector3.Distance(playerPosition, allowedPoint.position); // Расстояние до разрешенной точки
+        float distanceToAllowed = Vector3.Distance(playerPosition, allowedPoint.position); // Считаем расстояние до разрешённой точки
 
-        float distanceToBlocked = Vector3.Distance(playerPosition, blockedPoint.position); // Расстояние до запрещенной точки
+        float distanceToBlocked = Vector3.Distance(playerPosition, blockedPoint.position); // Считаем расстояние до запрещённой точки
 
-        return distanceToAllowed < distanceToBlocked; // Разрешаем, если игрок ближе к AllowedPoint
+        return distanceToAllowed < distanceToBlocked; // Разрешаем выход, если игрок ближе к AllowedPoint
     }
 
     private void TeleportPlayer() // Безопасный телепорт игрока
     {
         exitUsed = true; // Запоминаем, что окно уже использовано
 
-        playerStartedWindowExit = true; // Сообщаем монстру, что игрок начал перелезать
+        playerStartedWindowExit = true; // Сообщаем другим системам, что игрок начал перелезать
 
         if (finalSequence != null) // Если финальная последовательность назначена
         {
@@ -83,9 +83,9 @@ public class WindowExitTrigger : MonoBehaviour, IInteractable // Скрипт в
             finalQTE.StartQTE(); // Запускаем QTE
         }
 
-        if (disableAfterUse) // Если включено отключение после использования
+        if (disableAfterUse) // Если нужно отключить этот триггер после использования
         {
-            gameObject.SetActive(false); // Отключаем этот объект, чтобы окно нельзя было использовать повторно
+            gameObject.SetActive(false); // Отключаем объект выхода через окно
         }
     }
 }

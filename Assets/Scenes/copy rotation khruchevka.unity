@@ -10514,7 +10514,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1217738658}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -16454,7 +16454,6 @@ Transform:
   - {fileID: 1534589740}
   - {fileID: 2088329181}
   - {fileID: 1603515072}
-  - {fileID: 2032851490}
   m_Father: {fileID: 167222550}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &117182738
@@ -21471,7 +21470,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 6954902345181560374, guid: 8f655235f69fdf84888fc7663f7699e2,
         type: 3}
       propertyPath: m_Mesh
@@ -23125,7 +23124,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -44782,7 +44781,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1622537940794438261, guid: c1c9f2f5c7b983b4bb6b90b10a43426c,
         type: 3}
       propertyPath: m_Mesh
@@ -64020,7 +64019,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -64403,51 +64402,6 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!1 &359396579
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 359396581}
-  - component: {fileID: 359396580}
-  m_Layer: 0
-  m_Name: NoisePoint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &359396580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 359396579}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4072f388d74cfc6408531eec31ed4f85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  noiseRadius: 8
---- !u!4 &359396581
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 359396579}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.15057945, y: 2.9298735, z: -5.0899997}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2032851490}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &360953071
 GameObject:
   m_ObjectHideFlags: 0
@@ -73929,7 +73883,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -80546,7 +80500,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1622537940794438261, guid: c1c9f2f5c7b983b4bb6b90b10a43426c,
         type: 3}
       propertyPath: m_Mesh
@@ -86297,7 +86251,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1622537940794438261, guid: c1c9f2f5c7b983b4bb6b90b10a43426c,
         type: 3}
       propertyPath: m_Mesh
@@ -126397,7 +126351,19 @@ MonoBehaviour:
   finalSequence: {fileID: 322523953}
   onHit:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 322523953}
+        m_TargetAssemblyTypeName: ApartmentFinalSequence, Assembly-CSharp
+        m_MethodName: OnFinalWindowFirstHit
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onBreak:
     m_PersistentCalls:
       m_Calls: []
@@ -147191,7 +147157,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 6954902345181560374, guid: 8f655235f69fdf84888fc7663f7699e2,
         type: 3}
       propertyPath: m_Mesh
@@ -149518,6 +149484,7 @@ MonoBehaviour:
   breakableWindow: {fileID: 0}
   finalSequence: {fileID: 322523953}
   checkDistance: 3
+  triggered: 0
 --- !u!43 &850369070
 Mesh:
   m_ObjectHideFlags: 0
@@ -149725,7 +149692,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -160074,7 +160041,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -165307,7 +165274,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1543728112}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -185142,7 +185109,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1622537940794438261, guid: c1c9f2f5c7b983b4bb6b90b10a43426c,
         type: 3}
       propertyPath: m_Mesh
@@ -188003,7 +187970,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 959476737}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -194083,7 +194050,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 6954902345181560374, guid: 8f655235f69fdf84888fc7663f7699e2,
         type: 3}
       propertyPath: m_Mesh
@@ -207970,7 +207937,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -222609,7 +222576,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 2141398275682962197, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: m_Mesh
@@ -223872,7 +223839,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1107520156}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -236363,7 +236330,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 6954902345181560374, guid: 8f655235f69fdf84888fc7663f7699e2,
         type: 3}
       propertyPath: m_Mesh
@@ -245317,7 +245284,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1543728112}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -261832,7 +261799,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -267808,51 +267775,6 @@ Mesh:
     offset: 0
     size: 0
     path: 
---- !u!1 &1510447386
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1510447388}
-  - component: {fileID: 1510447387}
-  m_Layer: 0
-  m_Name: NoiseManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1510447387
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1510447386}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b66128b675006c848beb53487eed24ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  noiseSource: {fileID: 359396580}
---- !u!4 &1510447388
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1510447386}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3.9032288, y: 5.633176, z: -2.6099005}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2032851490}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1511627512
 GameObject:
   m_ObjectHideFlags: 0
@@ -270296,8 +270218,8 @@ MonoBehaviour:
   noiseManager: {fileID: 1341035694}
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1543728112}
-  secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  secondFixedRoom: {fileID: 1115892829}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -273351,14 +273273,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0d6b5b002e0f8944a223d0c9213ecf4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  phaseFourKey: 282
-  phaseSixKey: 283
-  teleportStartKey: 284
-  teleportKitchenKey: 285
-  resetSceneKey: 286
+  actions:
+  - name: Phase 4/6
+    actionType: 0
+    key: 282
+    enabled: 1
+  - name: Phase 6/6
+    actionType: 1
+    key: 283
+    enabled: 1
+  - name: Disable/Anable Monster
+    actionType: 6
+    key: 284
+    enabled: 1
+  - name: Disable/Anable Apartaments
+    actionType: 5
+    key: 285
+    enabled: 1
+  - name: Teleport Start
+    actionType: 2
+    key: 286
+    enabled: 1
+  - name: Teleport Kitchen
+    actionType: 3
+    key: 287
+    enabled: 1
+  - name: Reset Scene
+    actionType: 4
+    key: 288
+    enabled: 1
   cassetteInventoryUI: {fileID: 2001863568}
-  monsterAI: {fileID: 481491791}
   finalSequence: {fileID: 322523953}
+  monsterAI: {fileID: 481491791}
+  apartmentPowerController: {fileID: 2001776536}
+  tumblersToSync:
+  - {fileID: 1791432882}
+  - {fileID: 518344067}
+  - {fileID: 899648143}
+  - {fileID: 1119512605}
+  monsterObject: {fileID: 481491782}
+  monsterEnabledOnStart: 1
   playerController: {fileID: 1881408436}
   playerTransform: {fileID: 1881408431}
   playerHideController: {fileID: 1881408442}
@@ -282002,7 +281956,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.8000001, y: 0.01999998, z: 0.5}
+  m_Size: {x: 1.8000001, y: 0.2, z: 0.5}
   m_Center: {x: 1.6704102, y: -2.382904, z: -1.4075317}
 --- !u!43 &1581524123
 Mesh:
@@ -283061,7 +283015,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -306301,7 +306255,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1077312135}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -322824,7 +322778,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1077312135}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -325168,7 +325122,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1217738658}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -333364,7 +333318,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 6954902345181560374, guid: 8f655235f69fdf84888fc7663f7699e2,
         type: 3}
       propertyPath: m_Mesh
@@ -336634,7 +336588,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -346250,7 +346204,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 959476737}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -348762,7 +348716,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1077312135}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -353892,7 +353846,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1217738658}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -364983,39 +364937,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 0.3000002, z: 2.1999998}
   m_Center: {x: 1.6704102, y: -2.382904, z: -1.4075317}
---- !u!1 &2032851489
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2032851490}
-  m_Layer: 0
-  m_Name: NoiseButtomTest
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &2032851490
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2032851489}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 10.670067, y: 3.5699768, z: -10.887756}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 359396581}
-  - {fileID: 1510447388}
-  m_Father: {fileID: 116253646}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2034162673
 GameObject:
   m_ObjectHideFlags: 0
@@ -369830,7 +369751,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -369923,7 +369844,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -386454,7 +386375,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 6954902345181560374, guid: 8f655235f69fdf84888fc7663f7699e2,
         type: 3}
       propertyPath: m_Mesh
@@ -398752,7 +398673,7 @@ PrefabInstance:
         type: 3}
       propertyPath: noiseMeterUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 271453874}
     - target: {fileID: 1379603227249729841, guid: d9df3c307dbe1b642b9f721cb63bb4bb,
         type: 3}
       propertyPath: secondFixedRoom
@@ -411585,7 +411506,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1077312135}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -412735,7 +412656,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1077312135}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -412773,7 +412694,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -412811,7 +412732,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -414719,7 +414640,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1107520156}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -414757,7 +414678,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1107520156}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -415223,7 +415144,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 959476737}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -421735,7 +421656,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1543728112}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -423212,7 +423133,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 959476737}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -423566,7 +423487,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1543728112}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -424180,7 +424101,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1543728112}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -426889,7 +426810,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1115892829}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
@@ -427302,7 +427223,7 @@ MonoBehaviour:
   sourceRoomTracker: {fileID: 0}
   fixedRoom: {fileID: 1217738658}
   secondFixedRoom: {fileID: 0}
-  noiseMeterUI: {fileID: 0}
+  noiseMeterUI: {fileID: 271453874}
   noisePower: 5
   useSecondRoom: 0
   showNoiseOnUI: 1
