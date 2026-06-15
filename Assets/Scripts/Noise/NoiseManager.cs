@@ -6,17 +6,21 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
     public class RoomConnection // Одна связь слышимости между двумя комнатами
     {
         public string fromRoom; // Комната, откуда идёт шум
+
         public string toRoom; // Комната, где находится монстр
+
         [Range(0f, 1f)] public float volumeMultiplier = 1f; // Насколько звук ослабляется между комнатами
     }
 
     [Header("Main References")] // Заголовок ссылок
     public MonsterAI monster; // Ссылка на MonsterAI этой квартиры
+
     public RoomTracker monsterRoomTracker; // Ссылка на RoomTracker монстра
 
-    [Header("Noise Reaction")] // Настройки реакции
-    [Range(1, 10)] public int investigateThreshold = 6; // С какого итогового шума монстр идёт проверять
-    [Range(1, 10)] public int strongNoiseThreshold = 8; // С какого шума считаем звук очень сильным
+    [Header("Unknown Room Noise")] // Настройки шума вне комнат
+    public bool ignoreNoiseWithoutRoom = true; // Игнорировать шум, если источник не находится ни в одной RoomZone
+
+    [Range(0f, 1f)] public float unknownRoomMultiplier = 0f; // Множитель шума вне RoomZone, если игнорирование выключено
 
     [Header("Room Connections")] // Настройки связей комнат
     public RoomConnection[] roomConnections; // Массив связей между комнатами
@@ -30,47 +34,42 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
 
         if (monster == null) // Если монстр не назначен
         {
-            Debug.LogWarning("NoiseManager: не назначен MonsterAI"); // Предупреждаем
+            Debug.LogWarning("NoiseManager: не назначен MonsterAI"); // Предупреждаем о проблеме
+
             return; // Выходим
         }
 
         if (monsterRoomTracker == null) // Если RoomTracker монстра не назначен
         {
-            Debug.LogWarning("NoiseManager: не назначен RoomTracker монстра"); // Предупреждаем
-            return; // Выходим
-        }
-
-        if (sourceRoom == null) // Если комната источника шума неизвестна
-        {
-            if (showDebugLogs) // Если отладка включена
-            {
-                Debug.Log("NoiseManager: шум без комнаты, используем прямую силу: " + noisePower); // Пишем в Console
-            }
-
-            TrySendNoiseToMonster(noisePosition, noisePower); // Отправляем шум без ослабления
+            Debug.LogWarning("NoiseManager: не назначен RoomTracker монстра"); // Предупреждаем о проблеме
 
             return; // Выходим
         }
 
         RoomZone monsterRoom = monsterRoomTracker.currentRoom; // Берём текущую комнату монстра
 
-        if (monsterRoom == null) // Если монстр сейчас не в комнате
+        if (monsterRoom == null) // Если монстр сейчас не находится в RoomZone
         {
-            if (showDebugLogs) // Если отладка включена
+            if (showDebugLogs) // Если debug включён
             {
-                Debug.Log("NoiseManager: монстр сейчас не находится в RoomZone"); // Пишем в Console
+                Debug.Log("NoiseManager: монстр вне RoomZone, шум игнорируется"); // Пишем понятный лог
             }
+
+            return; // Не даём монстру реагировать на шум без комнаты
+        }
+
+        if (sourceRoom == null) // Если источник шума вне RoomZone
+        {
+            HandleNoiseWithoutSourceRoom(noisePosition, noisePower, monsterRoom); // Обрабатываем шум вне комнаты отдельным правилом
 
             return; // Выходим
         }
 
-        float multiplier = GetVolumeMultiplier(sourceRoom.roomId, monsterRoom.roomId); // Получаем множитель слышимости
+        float multiplier = GetVolumeMultiplier(sourceRoom.roomId, monsterRoom.roomId); // Получаем множитель слышимости между комнатами
 
-        float finalNoiseFloat = noisePower * multiplier; // Считаем итоговую силу шума после стен/комнат
+        int finalNoise = CalculateFinalNoise(noisePower, multiplier); // Считаем итоговую силу шума
 
-        int finalNoise = Mathf.RoundToInt(finalNoiseFloat); // Округляем итоговый шум до целого числа
-
-        if (showDebugLogs) // Если отладка включена
+        if (showDebugLogs) // Если debug включён
         {
             Debug.Log(
                 "Шум: " + noisePower +
@@ -78,42 +77,80 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
                 " | монстр в: " + monsterRoom.roomId +
                 " | множитель: " + multiplier +
                 " | итог: " + finalNoise
-            ); // Подробный лог
+            ); // Пишем подробный лог
         }
 
-        TrySendNoiseToMonster(noisePosition, finalNoise); // Проверяем и отправляем шум монстру
+        TrySendNoiseToMonster(noisePosition, finalNoise); // Передаём итоговый шум монстру
     }
 
     public void MakeNoiseFromTracker(Vector3 noisePosition, int noisePower, RoomTracker sourceTracker) // Создать шум от объекта с RoomTracker
     {
-        RoomZone sourceRoom = null; // Создаём переменную комнаты
+        RoomZone sourceRoom = null; // Создаём переменную комнаты источника
 
-        if (sourceTracker != null) // Если трекер назначен
+        if (sourceTracker != null) // Если трекер источника назначен
         {
-            sourceRoom = sourceTracker.currentRoom; // Берём комнату из трекера
+            sourceRoom = sourceTracker.currentRoom; // Берём текущую комнату источника
         }
 
         MakeNoise(noisePosition, noisePower, sourceRoom); // Вызываем основной метод шума
     }
 
-    private void TrySendNoiseToMonster(Vector3 noisePosition, int finalNoise) // Проверка реакции монстра на итоговый шум
+    private void HandleNoiseWithoutSourceRoom(Vector3 noisePosition, int noisePower, RoomZone monsterRoom) // Обработка шума вне RoomZone
     {
-    finalNoise = Mathf.Clamp(finalNoise, 0, 10); // Ограничиваем итоговый шум от 0 до 10
-
-    if (finalNoise <= 3) // Если шум 0-3
-    {
-        if (showDebugLogs) // Если отладка включена
+        if (ignoreNoiseWithoutRoom) // Если шум вне комнат нужно игнорировать
         {
-            Debug.Log("Монстр игнорирует шум. Итоговый шум: " + finalNoise); // Лог
+            if (showDebugLogs) // Если debug включён
+            {
+                Debug.Log("NoiseManager: источник шума вне RoomZone, шум игнорируется. Сила: " + noisePower); // Пишем лог
+            }
+
+            return; // Полностью игнорируем шум
         }
 
-        return; // Ничего не делаем
+        int finalNoise = CalculateFinalNoise(noisePower, unknownRoomMultiplier); // Ослабляем шум через отдельный множитель
+
+        if (showDebugLogs) // Если debug включён
+        {
+            Debug.Log(
+                "Шум вне RoomZone: " + noisePower +
+                " | монстр в: " + monsterRoom.roomId +
+                " | множитель вне комнат: " + unknownRoomMultiplier +
+                " | итог: " + finalNoise
+            ); // Пишем подробный лог
+        }
+
+        TrySendNoiseToMonster(noisePosition, finalNoise); // Передаём ослабленный шум монстру
     }
 
-        if (showDebugLogs) // Если отладка включена
+    private int CalculateFinalNoise(int noisePower, float multiplier) // Посчитать итоговый шум
     {
-        Debug.Log("Монстр реагирует на шум. Итоговый шум: " + finalNoise); // Лог
+        float finalNoiseFloat = noisePower * multiplier; // Умножаем исходный шум на множитель
+
+        int finalNoise = Mathf.RoundToInt(finalNoiseFloat); // Округляем до целого
+
+        finalNoise = Mathf.Clamp(finalNoise, 0, 10); // Ограничиваем результат от 0 до 10
+
+        return finalNoise; // Возвращаем итоговый шум
     }
+
+    private void TrySendNoiseToMonster(Vector3 noisePosition, int finalNoise) // Проверка реакции монстра на итоговый шум
+    {
+        finalNoise = Mathf.Clamp(finalNoise, 0, 10); // Ограничиваем итоговый шум от 0 до 10
+
+        if (finalNoise <= 3) // Если шум 0-3
+        {
+            if (showDebugLogs) // Если debug включён
+            {
+                Debug.Log("Монстр игнорирует шум. Итоговый шум: " + finalNoise); // Пишем лог
+            }
+
+            return; // Ничего не делаем
+        }
+
+        if (showDebugLogs) // Если debug включён
+        {
+            Debug.Log("Монстр реагирует на шум. Итоговый шум: " + finalNoise); // Пишем лог
+        }
 
         monster.ReactToNoise(noisePosition, finalNoise); // Передаём монстру позицию и силу шума
     }
@@ -126,16 +163,16 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
         {
             if (connection == null) continue; // Если связь пустая — пропускаем
 
-            bool directMatch = connection.fromRoom == fromRoom && connection.toRoom == toRoom; // Проверяем прямое направление
+            bool directMatch = connection.fromRoom == fromRoom && connection.toRoom == toRoom; // Проверяем прямую связь
 
-            bool reverseMatch = connection.fromRoom == toRoom && connection.toRoom == fromRoom; // Проверяем обратное направление
+            bool reverseMatch = connection.fromRoom == toRoom && connection.toRoom == fromRoom; // Проверяем обратную связь
 
-            if (directMatch || reverseMatch) // Если нашли связь в любую сторону
+            if (directMatch || reverseMatch) // Если связь найдена в любую сторону
             {
-                return connection.volumeMultiplier; // Возвращаем множитель
+                return connection.volumeMultiplier; // Возвращаем множитель связи
             }
         }
 
-        return 0f; // Если связи нет — звук не проходит
+        return 0f; // Если связи между комнатами нет — звук не проходит
     }
 }

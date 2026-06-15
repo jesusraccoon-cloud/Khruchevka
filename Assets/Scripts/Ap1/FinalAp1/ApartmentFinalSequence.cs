@@ -43,14 +43,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
     public UniversalDoor apartmentExitDoor; // Входная дверь квартиры
     public bool lockApartmentDoorAfterExit = true; // Блокировать ли дверь после выхода
 
-    [HideInInspector] // Прячем в Inspector
-    public bool finalSequenceStarted = false; // Финал начался
-
-    [HideInInspector] // Прячем в Inspector
-    public bool apartmentCompleted = false; // Квартира завершена
-
-    [HideInInspector] // Прячем в Inspector
-    public bool readyToDisableByTumbler = false; // Можно отключить квартиру тумблером УМПСР
+    [HideInInspector] public bool finalSequenceStarted = false; // Финал начался
+    [HideInInspector] public bool apartmentCompleted = false; // Квартира завершена
+    [HideInInspector] public bool readyToDisableByTumbler = false; // Можно отключить квартиру тумблером УМПСР
 
     private bool finalStarted = false; // Финал уже запускался
     private bool exitBlocked = false; // Выход уже блокировался
@@ -60,20 +55,11 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
     private void Start() // При старте сцены
     {
-        if (closetPhysicalFall != null) // Если шкаф назначен
-        {
-            closetPhysicalFall.canFall = false; // Запрещаем падение шкафа до финала
-        }
+        if (closetPhysicalFall != null) closetPhysicalFall.canFall = false; // Запрещаем падение шкафа до финала
 
-        if (bathroomExitChaseTrigger != null) // Если триггер выхода из ванной назначен
-        {
-            bathroomExitChaseTrigger.SetActive(false); // Выключаем его на старте
-        }
+        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Выключаем триггер выхода из ванной на старте
 
-        if (apartmentExitCompleteTrigger != null) // Если триггер завершения квартиры назначен
-        {
-            apartmentExitCompleteTrigger.SetActive(false); // Выключаем его до финала
-        }
+        if (apartmentExitCompleteTrigger != null) apartmentExitCompleteTrigger.SetActive(false); // Выключаем триггер завершения квартиры до финала
     }
 
     public void StartFinalSequence() // Запуск финала
@@ -83,10 +69,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         finalStarted = true; // Запоминаем запуск финала
         finalSequenceStarted = true; // Сообщаем другим скриптам, что финал начался
 
-        if (closetPhysicalFall != null) // Если шкаф назначен
-        {
-            closetPhysicalFall.canFall = true; // Разрешаем падение шкафа
-        }
+        if (closetPhysicalFall != null) closetPhysicalFall.canFall = true; // Разрешаем падение шкафа
 
         if (fallenWardrobe != null) fallenWardrobe.SetActive(true); // Включаем упавший шкаф
 
@@ -107,7 +90,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (kitchenFinalTrigger != null) kitchenFinalTrigger.SetActive(true); // Включаем кухонный триггер
 
-        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Пока держим выключенным
+        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Пока держим триггер ванной выключенным
 
         if (apartmentExitCompleteTrigger != null) apartmentExitCompleteTrigger.SetActive(true); // Включаем триггер завершения квартиры
 
@@ -124,15 +107,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterObject != null) monsterObject.SetActive(true); // Включаем монстра
 
-        if (monsterAI != null && monsterExitBlockPoint != null) // Если AI и точка назначены
-        {
-            monsterAI.GoToPointAndStop(monsterExitBlockPoint); // Отправляем монстра к выходу
-        }
+        if (monsterAI != null && monsterExitBlockPoint != null) monsterAI.GoToPointAndStop(monsterExitBlockPoint); // Отправляем монстра к выходу
 
-        if (monsterPatrol != null) // Если патруль назначен
-        {
-            monsterPatrol.isPatrolActive = false; // Выключаем патруль
-        }
+        if (monsterPatrol != null) monsterPatrol.isPatrolActive = false; // Выключаем патруль
 
         Debug.Log("Монстр пошёл блокировать выход"); // Debug
     }
@@ -156,10 +133,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterObject != null) monsterObject.SetActive(true); // Включаем монстра
 
-        if (monsterAI != null && monsterAfterWindowHitPoint != null) // Если AI и точка назначены
-        {
-            monsterAI.StartFinalWindowThreat(monsterAfterWindowHitPoint); // Запускаем угрозу у окна
-        }
+        if (monsterAI != null && monsterAfterWindowHitPoint != null) monsterAI.StartFinalWindowThreat(monsterAfterWindowHitPoint); // Запускаем угрозу у окна
 
         Debug.Log("Первый удар по окну: монстр начал угрозу у окна"); // Debug
     }
@@ -170,10 +144,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         playerEscapedThroughWindow = true; // Запоминаем, что игрок перелез
 
-        if (bathroomExitChaseTrigger != null) // Если триггер выхода из ванной назначен
-        {
-            bathroomExitChaseTrigger.SetActive(true); // Включаем триггер погони
-        }
+        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(true); // Включаем триггер погони после ванной
 
         Debug.Log("Игрок перелез через окно, триггер выхода из ванной включён"); // Debug
     }
@@ -188,17 +159,15 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         bathroomExitTriggered = true; // Запоминаем срабатывание
 
-        if (monsterAI != null) // Если монстр назначен
-        {
-            monsterAI.ForceChasePlayer(); // Принудительно запускаем погоню
-        }
+        if (monsterObject != null) monsterObject.SetActive(true); // Гарантированно включаем монстра
 
-        if (bathroomExitChaseTrigger != null) // Если триггер назначен
-        {
-            bathroomExitChaseTrigger.SetActive(false); // Отключаем триггер
-        }
+        if (monsterPatrol != null) monsterPatrol.isPatrolActive = false; // Гарантированно выключаем патруль
 
-        Debug.Log("Игрок вышел из ванной, монстр начал преследование"); // Debug
+        if (monsterAI != null) monsterAI.ForceChasePlayer(); // Запускаем постоянную финальную погоню
+
+        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Отключаем триггер
+
+        Debug.Log("Игрок вышел из ванной, монстр начал финальную погоню"); // Debug
     }
 
     public void TryCompleteApartmentAfterExit() // Игрок вышел из квартиры после финала
@@ -208,6 +177,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (!finalSequenceStarted) // Если финал ещё не начался
         {
             Debug.Log("Квартиру нельзя завершить: финал 6/6 ещё не запущен"); // Debug
+
             return; // Выходим
         }
 
@@ -218,10 +188,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         {
             apartmentExitDoor.CloseDoor(); // Закрываем дверь квартиры
 
-            if (lockApartmentDoorAfterExit) // Если нужно заблокировать дверь
-            {
-                apartmentExitDoor.SetLocked(true); // Блокируем дверь квартиры
-            }
+            if (lockApartmentDoorAfterExit) apartmentExitDoor.SetLocked(true); // Блокируем дверь квартиры
         }
 
         Debug.Log("Квартира завершена. Теперь её можно отключить тумблером УМПСР"); // Debug

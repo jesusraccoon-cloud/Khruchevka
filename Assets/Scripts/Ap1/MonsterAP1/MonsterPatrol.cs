@@ -1,62 +1,122 @@
-using UnityEngine;                  // базовые классы Unity
-using UnityEngine.AI;               // доступ к NavMeshAgent
+using UnityEngine; // Подключаем Unity
+using UnityEngine.AI; // Подключаем NavMeshAgent
 
-public class MonsterPatrol : MonoBehaviour   // скрипт патруля монстра
+public class MonsterPatrol : MonoBehaviour // Скрипт патруля монстра
 {
-    public bool isPatrolActive = false;      // включен ли патруль
+    public bool isPatrolActive = false; // Активен ли патруль
 
-    public NavMeshAgent agent;               // ссылка на NavMeshAgent
-    public Transform[] patrolPoints;         // точки патруля
+    public NavMeshAgent agent; // Ссылка на NavMeshAgent
 
-    public float waitTime = 2f;              // сколько ждать на точке
+    public Transform[] patrolPoints; // Точки патруля
 
-    private int currentPointIndex = 0;       // номер текущей точки
-    private float waitTimer = 0f;            // таймер ожидания
+    public float waitTime = 2f; // Сколько ждать на точке
 
-    void Start()                             // вызывается при старте
+    public float arriveExtraDistance = 0.3f; // Дополнительная дистанция, чтобы считать точку достигнутой
+
+    private int currentPointIndex = 0; // Индекс текущей точки
+
+    private float waitTimer = 0f; // Таймер ожидания
+
+    private bool hasDestination = false; // Есть ли сейчас назначенная точка
+
+    private void Reset() // Автозаполнение при добавлении скрипта
     {
-        if (agent == null)                   // если агент не назначен
-            agent = GetComponent<NavMeshAgent>(); // ищем агент на этом объекте
+        agent = GetComponent<NavMeshAgent>(); // Ищем NavMeshAgent на этом объекте
     }
 
-    void Update()                            // вызывается каждый кадр
+    private void Awake() // Вызывается при запуске объекта
     {
-        if (!isPatrolActive) return;         // если патруль выключен — ничего не делаем
+        if (agent == null) agent = GetComponent<NavMeshAgent>(); // Если агент не назначен — ищем автоматически
+    }
 
-        if (patrolPoints.Length == 0) return; // если точек нет — выходим
+    private void Update() // Каждый кадр
+    {
+        if (!isPatrolActive) return; // Если патруль выключен — выходим
 
-        if (agent.pathPending) return;       // если путь ещё строится — ждём
+        if (agent == null) return; // Если агента нет — выходим
 
-        if (agent.remainingDistance <= agent.stoppingDistance) // если дошёл до точки
+        if (!agent.isActiveAndEnabled) return; // Если агент выключен — выходим
+
+        if (!agent.isOnNavMesh) return; // Если агент не на NavMesh — выходим
+
+        if (patrolPoints == null || patrolPoints.Length == 0) return; // Если точек нет — выходим
+
+        if (!hasDestination) // Если точка ещё не назначена
         {
-            waitTimer += Time.deltaTime;     // считаем время ожидания
+            SetCurrentPointDestination(); // Назначаем текущую точку
 
-            if (waitTimer >= waitTime)       // если достаточно подождали
-            {
-                currentPointIndex++;         // переходим к следующей точке
-
-                if (currentPointIndex >= patrolPoints.Length) // если дошли до конца списка
-                    currentPointIndex = 0;   // возвращаемся к первой точке
-
-                agent.SetDestination(patrolPoints[currentPointIndex].position); // идём к новой точке
-
-                waitTimer = 0f;              // сбрасываем таймер
-            }
+            return; // Выходим до следующего кадра
         }
+
+        if (agent.pathPending) return; // Если путь ещё строится — ждём
+
+        if (agent.remainingDistance > agent.stoppingDistance + arriveExtraDistance) return; // Если ещё не дошли — выходим
+
+        waitTimer += Time.deltaTime; // Увеличиваем таймер ожидания
+
+        if (waitTimer < waitTime) return; // Если ждать ещё рано — выходим
+
+        GoToNextPoint(); // Переходим к следующей точке
     }
 
-    public void StartPatrol()                // метод для запуска патруля извне
+    public void StartPatrol() // Запустить патруль
     {
-        isPatrolActive = true;               // включаем патруль
+        if (agent == null) agent = GetComponent<NavMeshAgent>(); // Если агент не назначен — ищем
 
-        waitTimer = 0f;                      // сбрасываем таймер ожидания
+        if (agent == null) return; // Если агента всё равно нет — выходим
 
-        currentPointIndex = 0;               // начинаем с первой точки
+        if (!agent.isActiveAndEnabled) return; // Если агент выключен — выходим
 
-        if (agent == null)                   // если агент не назначен
-            agent = GetComponent<NavMeshAgent>(); // ищем агент на монстре
+        if (!agent.isOnNavMesh) return; // Если агент не стоит на NavMesh — выходим
 
-        if (patrolPoints.Length > 0)         // если есть точки
-            agent.SetDestination(patrolPoints[currentPointIndex].position); // отправляем к первой точке
+        if (patrolPoints == null || patrolPoints.Length == 0) return; // Если точек нет — выходим
+
+        isPatrolActive = true; // Включаем патруль
+
+        waitTimer = 0f; // Сбрасываем таймер ожидания
+
+        hasDestination = false; // Сбрасываем назначенную точку
+
+        agent.isStopped = false; // ВАЖНО: разрешаем агенту двигаться после любых Stop()
+
+        agent.ResetPath(); // Сбрасываем старый путь
+
+        SetCurrentPointDestination(); // Назначаем текущую точку
+    }
+
+    public void StopPatrol() // Остановить патруль
+    {
+        isPatrolActive = false; // Выключаем патруль
+
+        waitTimer = 0f; // Сбрасываем таймер
+
+        hasDestination = false; // Сбрасываем точку
+    }
+
+    private void SetCurrentPointDestination() // Назначить текущую точку
+    {
+        if (patrolPoints[currentPointIndex] == null) // Если текущая точка пустая
+        {
+            GoToNextPoint(); // Переходим к следующей
+
+            return; // Выходим
+        }
+
+        agent.isStopped = false; // Разрешаем движение
+
+        agent.SetDestination(patrolPoints[currentPointIndex].position); // Отправляем монстра к текущей точке
+
+        hasDestination = true; // Запоминаем, что цель назначена
+    }
+
+    private void GoToNextPoint() // Перейти к следующей точке
+    {
+        waitTimer = 0f; // Сбрасываем ожидание
+
+        currentPointIndex++; // Увеличиваем индекс
+
+        if (currentPointIndex >= patrolPoints.Length) currentPointIndex = 0; // Если вышли за массив — возвращаемся к первой точке
+
+        hasDestination = false; // Сбрасываем цель, чтобы назначить новую
     }
 }
