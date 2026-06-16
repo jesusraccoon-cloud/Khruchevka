@@ -1,7 +1,17 @@
 using UnityEngine; // Подключаем Unity
+using System.Collections; // Подключаем корутины
 
-public class ApartmentFinalSequence : MonoBehaviour // Главный режиссёр финальной сцены квартиры
+public class ApartmentFinalSequence : MonoBehaviour // Главный режиссёр сценарных событий квартиры
 {
+    [Header("Early Hall Door Break 4/6")] // Блок раннего события на 4/6 кассет
+    public GameObject normalHallDoors; // Рабочие двери из прихожей в зал
+
+    public GameObject brokenHallDoors; // Сломанные двери из прихожей в зал
+
+    public float hallDoorBreakDelay = 1.5f; // Задержка перед поломкой дверей
+
+    private bool hallDoorBreakStarted = false; // Защита от повторного запуска события 4/6
+
     [Header("Final Objects")] // Блок финальных объектов
     public GameObject fallenWardrobe; // Упавший шкаф
 
@@ -10,6 +20,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
     [Header("Room 1 Door Break")] // Блок поломки двери комнаты
     public GameObject normalRoomDoor; // Обычная дверь комнаты
+
     public GameObject brokenDoorOnFloor; // Выбитая дверь комнаты
 
     [Header("Bathroom Door")] // Блок двери ванной
@@ -20,46 +31,93 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
     [Header("Monster")] // Блок монстра
     public GameObject monsterObject; // Объект монстра
+
     public MonsterAI monsterAI; // AI монстра
+
     public MonsterPatrol monsterPatrol; // Патруль монстра
+
     public Transform monsterExitBlockPoint; // Точка блокировки выхода
 
     [Header("Window First Hit Reaction")] // Блок реакции на первый удар по окну
     public GameObject finalNormalDoor; // Обычная дверь перед реакцией
+
     public GameObject finalBrokenDoor; // Сломанная дверь после реакции
+
     public Rigidbody fallenWardrobeRigidbody; // Rigidbody шкафа
+
     public Vector3 wardrobeForceDirection = new Vector3(1f, 0.2f, 0f); // Направление толчка шкафа
+
     public float wardrobeForce = 4f; // Сила толчка шкафа
+
     public float wardrobeTorque = 2f; // Сила вращения шкафа
+
     public Transform monsterAfterWindowHitPoint; // Точка монстра после удара по окну
 
     [Header("Triggers")] // Блок триггеров
     public GameObject hallReturnDeathTrigger; // Триггер смерти при возврате в коридор
+
     public GameObject kitchenFinalTrigger; // Триггер кухни
+
     public GameObject bathroomExitChaseTrigger; // Триггер выхода из ванной
+
     public GameObject apartmentExitCompleteTrigger; // Триггер завершения квартиры после выхода
 
     [Header("Apartment Completion")] // Блок завершения квартиры
     public UniversalDoor apartmentExitDoor; // Входная дверь квартиры
+
     public bool lockApartmentDoorAfterExit = true; // Блокировать ли дверь после выхода
 
     [HideInInspector] public bool finalSequenceStarted = false; // Финал начался
+
     [HideInInspector] public bool apartmentCompleted = false; // Квартира завершена
+
     [HideInInspector] public bool readyToDisableByTumbler = false; // Можно отключить квартиру тумблером УМПСР
 
     private bool finalStarted = false; // Финал уже запускался
+
     private bool exitBlocked = false; // Выход уже блокировался
+
     private bool windowFirstHitReactionStarted = false; // Реакция на первый удар уже была
+
     private bool playerEscapedThroughWindow = false; // Игрок перелез через окно
+
     private bool bathroomExitTriggered = false; // Триггер выхода из ванной уже сработал
 
     private void Start() // При старте сцены
     {
         if (closetPhysicalFall != null) closetPhysicalFall.canFall = false; // Запрещаем падение шкафа до финала
 
-        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Выключаем триггер выхода из ванной на старте
+        if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Выключаем триггер выхода из ванной
 
-        if (apartmentExitCompleteTrigger != null) apartmentExitCompleteTrigger.SetActive(false); // Выключаем триггер завершения квартиры до финала
+        if (apartmentExitCompleteTrigger != null) apartmentExitCompleteTrigger.SetActive(false); // Выключаем триггер завершения квартиры
+
+        if (brokenHallDoors != null) brokenHallDoors.SetActive(false); // На старте сломанные двери зала выключены
+    }
+
+    public void StartEarlyHallDoorBreakSequence() // Запустить событие выламывания дверей на 4/6
+    {
+        if (hallDoorBreakStarted) return; // Если событие уже запускалось — выходим
+
+        hallDoorBreakStarted = true; // Запоминаем, что событие запущено
+
+        StartCoroutine(EarlyHallDoorBreakRoutine()); // Запускаем последовательность
+    }
+
+    private IEnumerator EarlyHallDoorBreakRoutine() // Последовательность ранней поломки дверей
+    {
+        if (monsterObject != null) monsterObject.SetActive(true); // Включаем монстра
+
+        if (monsterPatrol != null) monsterPatrol.isPatrolActive = false; // Пока выключаем патруль
+
+        if (hallDoorBreakDelay > 0f) yield return new WaitForSeconds(hallDoorBreakDelay); // Ждём перед ударом/поломкой
+
+        if (normalHallDoors != null) normalHallDoors.SetActive(false); // Выключаем рабочие двери
+
+        if (brokenHallDoors != null) brokenHallDoors.SetActive(true); // Включаем сломанные двери
+
+        if (monsterAI != null) monsterAI.ActivateMonster(); // Запускаем обычный патруль монстра
+
+        Debug.Log("4/6: монстр выломал двери из прихожей в зал"); // Пишем лог
     }
 
     public void StartFinalSequence() // Запуск финала
@@ -67,6 +125,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (finalStarted) return; // Если финал уже был — выходим
 
         finalStarted = true; // Запоминаем запуск финала
+
         finalSequenceStarted = true; // Сообщаем другим скриптам, что финал начался
 
         if (closetPhysicalFall != null) closetPhysicalFall.canFall = true; // Разрешаем падение шкафа
@@ -80,7 +139,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (bathroomDoor != null) // Если дверь ванной назначена
         {
             bathroomDoor.CloseDoor(); // Закрываем дверь ванной
+
             bathroomDoor.SetLocked(true); // Блокируем дверь ванной
+
             bathroomDoor.canMonsterOpen = false; // Запрещаем монстру открыть ванную
         }
 
@@ -96,7 +157,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         BlockExitWithMonster(); // Отправляем монстра блокировать выход
 
-        Debug.Log("Финальная последовательность квартиры запущена"); // Debug
+        Debug.Log("Финальная последовательность квартиры запущена"); // Пишем лог
     }
 
     public void BlockExitWithMonster() // Монстр идёт блокировать выход
@@ -111,7 +172,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterPatrol != null) monsterPatrol.isPatrolActive = false; // Выключаем патруль
 
-        Debug.Log("Монстр пошёл блокировать выход"); // Debug
+        Debug.Log("Монстр пошёл блокировать выход"); // Пишем лог
     }
 
     public void OnFinalWindowFirstHit() // Первый удар по окну
@@ -127,7 +188,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (fallenWardrobeRigidbody != null) // Если Rigidbody шкафа назначен
         {
             fallenWardrobeRigidbody.isKinematic = false; // Включаем физику шкафа
+
             fallenWardrobeRigidbody.AddForce(wardrobeForceDirection.normalized * wardrobeForce, ForceMode.Impulse); // Толкаем шкаф
+
             fallenWardrobeRigidbody.AddTorque(Random.insideUnitSphere * wardrobeTorque, ForceMode.Impulse); // Добавляем вращение
         }
 
@@ -135,7 +198,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterAI != null && monsterAfterWindowHitPoint != null) monsterAI.StartFinalWindowThreat(monsterAfterWindowHitPoint); // Запускаем угрозу у окна
 
-        Debug.Log("Первый удар по окну: монстр начал угрозу у окна"); // Debug
+        Debug.Log("Первый удар по окну: монстр начал угрозу у окна"); // Пишем лог
     }
 
     public void OnPlayerEscapedThroughWindow() // Игрок перелез через окно
@@ -146,7 +209,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(true); // Включаем триггер погони после ванной
 
-        Debug.Log("Игрок перелез через окно, триггер выхода из ванной включён"); // Debug
+        Debug.Log("Игрок перелез через окно, триггер выхода из ванной включён"); // Пишем лог
     }
 
     public void OnBathroomExitTrigger() // Игрок вышел из ванной
@@ -167,7 +230,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (bathroomExitChaseTrigger != null) bathroomExitChaseTrigger.SetActive(false); // Отключаем триггер
 
-        Debug.Log("Игрок вышел из ванной, монстр начал финальную погоню"); // Debug
+        Debug.Log("Игрок вышел из ванной, монстр начал финальную погоню"); // Пишем лог
     }
 
     public void TryCompleteApartmentAfterExit() // Игрок вышел из квартиры после финала
@@ -176,12 +239,13 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (!finalSequenceStarted) // Если финал ещё не начался
         {
-            Debug.Log("Квартиру нельзя завершить: финал 6/6 ещё не запущен"); // Debug
+            Debug.Log("Квартиру нельзя завершить: финал 6/6 ещё не запущен"); // Пишем лог
 
             return; // Выходим
         }
 
         apartmentCompleted = true; // Запоминаем завершение квартиры
+
         readyToDisableByTumbler = true; // Разрешаем отключение через тумблер УМПСР
 
         if (apartmentExitDoor != null) // Если входная дверь квартиры назначена
@@ -191,6 +255,6 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
             if (lockApartmentDoorAfterExit) apartmentExitDoor.SetLocked(true); // Блокируем дверь квартиры
         }
 
-        Debug.Log("Квартира завершена. Теперь её можно отключить тумблером УМПСР"); // Debug
+        Debug.Log("Квартира завершена. Теперь её можно отключить тумблером УМПСР"); // Пишем лог
     }
 }

@@ -46,29 +46,33 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
         UpdateUI(); // Обновляем текст счетчика
     }
 
-    void ActivateMonster() // Метод активации монстра
+    void ActivateMonster() // Метод события на 4/6 кассет
     {
-        monsterActivated = true; // Запоминаем, что монстр уже включён
+    monsterActivated = true; // Запоминаем, что событие 4/6 уже запущено
 
-        if (monsterAI != null) // Если ссылка на MonsterAI назначена
+    if (hallDoors != null) // Если массив дверей существует
+    {
+        foreach (UniversalDoor door in hallDoors) // Проходим по каждой двери
         {
-            monsterAI.ActivateMonster(); // Включаем MonsterAI
-        }
-        else // Если ссылка на MonsterAI не назначена
-        {
-            Debug.LogWarning("MonsterAI не назначен в CassetteInventoryUI"); // Пишем предупреждение в Console
-        }
-
-        if (hallDoors != null) // Если массив дверей существует
-        {
-            foreach (UniversalDoor door in hallDoors) // Проходим по каждой двери в массиве
+            if (door != null) // Если дверь назначена
             {
-                if (door != null) // Если конкретная дверь назначена
-                {
-                    door.isLocked = false; // Разблокируем эту дверь
-                }
+                door.SetLocked(false); // Разблокируем дверь через метод, а не напрямую через переменную
             }
         }
+    }
+
+    if (finalSequence != null) // Если ApartmentFinalSequence назначен
+    {
+        finalSequence.StartEarlyHallDoorBreakSequence(); // Запускаем выламывание дверей монстром
+    }
+    else if (monsterAI != null) // Если финальный режиссёр не назначен, но монстр есть
+    {
+        monsterAI.ActivateMonster(); // Запасной вариант: просто активируем монстра
+    }
+    else // Если ничего не назначено
+    {
+        Debug.LogWarning("CassetteInventoryUI: не назначен ApartmentFinalSequence или MonsterAI"); // Пишем предупреждение
+    }
     }
 
     void TriggerFinalEvent() // Метод запуска финального события
