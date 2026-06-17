@@ -1,16 +1,33 @@
-using UnityEngine; // Подключаем Unity
+using UnityEngine; // Подключаем Unity-классы
 using System.Collections; // Подключаем корутины
 
 public class ApartmentFinalSequence : MonoBehaviour // Главный режиссёр сценарных событий квартиры
 {
-    [Header("Early Hall Door Break 4/6")] // Блок раннего события на 4/6 кассет
+    [Header("Early Hall Door Break 4/6")] // Блок раннего события на 4/6 кассет или 3/3 шума
     public GameObject normalHallDoors; // Рабочие двери из прихожей в зал
 
     public GameObject brokenHallDoors; // Сломанные двери из прихожей в зал
 
     public float hallDoorBreakDelay = 1.5f; // Задержка перед поломкой дверей
 
+    public AudioSource hallDoorBreakAudioSource; // AudioSource для звука выбивания дверей
+
+    public AudioClip hallDoorBreakSound; // Звук выбивания дверей
+
     private bool hallDoorBreakStarted = false; // Защита от повторного запуска события 4/6
+
+    [Header("Noise Alarm 3/3")] // Блок тревоги квартиры от шума
+    public bool enableNoiseAlarmActivation = true; // Разрешить ли активацию 4/6 через шум
+
+    public int noiseReactionThreshold = 4; // С какой силы шум считается реакцией монстра
+
+    public int noiseReactionsToActivate = 3; // Сколько реакций нужно для досрочной активации
+
+    public float noiseReactionCooldown = 2f; // Защита от слишком частого набора счётчика
+
+    public int currentNoiseReactions = 0; // Текущий счётчик тревоги квартиры
+
+    private float lastNoiseReactionTime = -999f; // Время последней засчитанной реакции
 
     [Header("Final Objects")] // Блок финальных объектов
     public GameObject fallenWardrobe; // Упавший шкаф
@@ -94,7 +111,31 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
         if (brokenHallDoors != null) brokenHallDoors.SetActive(false); // На старте сломанные двери зала выключены
     }
 
-    public void StartEarlyHallDoorBreakSequence() // Запустить событие выламывания дверей на 4/6
+    public void RegisterNoiseReactionForEarlyEvent(int finalNoisePower) // Засчитать реакцию квартиры на шум
+    {
+        if (!enableNoiseAlarmActivation) return; // Если активация через шум выключена — выходим
+
+        if (hallDoorBreakStarted) return; // Если событие 4/6 уже запущено — выходим
+
+        if (finalStarted) return; // Если финал 6/6 уже запущен — выходим
+
+        if (finalNoisePower < noiseReactionThreshold) return; // Если шум слабее порога — не считаем
+
+        if (Time.time - lastNoiseReactionTime < noiseReactionCooldown) return; // Если слишком рано после прошлого шума — не считаем
+
+        lastNoiseReactionTime = Time.time; // Запоминаем время засчитанной реакции
+
+        currentNoiseReactions = Mathf.Clamp(currentNoiseReactions + 1, 0, noiseReactionsToActivate); // Увеличиваем счётчик 3/3
+
+        Debug.Log("Тревога квартиры: " + currentNoiseReactions + "/" + noiseReactionsToActivate + " | шум: " + finalNoisePower); // Пишем лог тревоги
+
+        if (currentNoiseReactions >= noiseReactionsToActivate) // Если набрали 3/3
+        {
+            StartEarlyHallDoorBreakSequence(); // Запускаем то же событие, что и на 4/6 кассет
+        }
+    }
+
+    public void StartEarlyHallDoorBreakSequence() // Запустить событие выламывания дверей на 4/6 или 3/3 шума
     {
         if (hallDoorBreakStarted) return; // Если событие уже запускалось — выходим
 
@@ -109,7 +150,9 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterPatrol != null) monsterPatrol.isPatrolActive = false; // Пока выключаем патруль
 
-        if (hallDoorBreakDelay > 0f) yield return new WaitForSeconds(hallDoorBreakDelay); // Ждём перед ударом/поломкой
+        if (hallDoorBreakAudioSource != null && hallDoorBreakSound != null) hallDoorBreakAudioSource.PlayOneShot(hallDoorBreakSound); // Проигрываем звук выбивания дверей
+
+        if (hallDoorBreakDelay > 0f) yield return new WaitForSeconds(hallDoorBreakDelay); // Ждём перед поломкой дверей
 
         if (normalHallDoors != null) normalHallDoors.SetActive(false); // Выключаем рабочие двери
 
@@ -117,7 +160,7 @@ public class ApartmentFinalSequence : MonoBehaviour // Главный режис
 
         if (monsterAI != null) monsterAI.ActivateMonster(); // Запускаем обычный патруль монстра
 
-        Debug.Log("4/6: монстр выломал двери из прихожей в зал"); // Пишем лог
+        Debug.Log("4/6 событие: монстр выломал двери и начал патруль квартиры"); // Пишем лог
     }
 
     public void StartFinalSequence() // Запуск финала

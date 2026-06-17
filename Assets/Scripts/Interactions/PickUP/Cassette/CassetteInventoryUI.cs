@@ -8,7 +8,10 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
 
     [Header("Settings")] // Блок настроек
     public int currentCassetteCount = 0; // Текущее количество кассет
+
     public int maxCassetteCount = 6; // Максимум кассет
+
+    public int activateMonsterAt = 4; // На какой кассете активировать монстра
 
     [Header("Monster")] // Блок монстра
     public MonsterAI monsterAI; // Ссылка на главный скрипт монстра
@@ -19,12 +22,11 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
     [Header("Final Sequence")] // Блок финальной последовательности
     public ApartmentFinalSequence finalSequence; // Ссылка на режиссёрский скрипт финала квартиры
 
-    public int activateMonsterAt = 4; // На какой кассете активировать монстра
-
     private bool monsterActivated = false; // Защита от повторной активации монстра
+
     private bool finalEventTriggered = false; // Защита от повторного запуска финального события
 
-    void Start() // При старте сцены
+    private void Start() // При старте сцены
     {
         UpdateUI(); // Обновляем UI
     }
@@ -35,7 +37,7 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
 
         if (!monsterActivated && currentCassetteCount >= activateMonsterAt) // Если монстр ещё не активирован и собрано 4+ кассеты
         {
-            ActivateMonster(); // Активируем монстра и открываем доступ в зал
+            ActivateMonsterByCassette(); // Запускаем событие 4/6 через кассеты
         }
 
         if (!finalEventTriggered && currentCassetteCount >= maxCassetteCount) // Если финал ещё не запущен и собраны все кассеты
@@ -46,36 +48,39 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
         UpdateUI(); // Обновляем текст счетчика
     }
 
-    void ActivateMonster() // Метод события на 4/6 кассет
+    private void ActivateMonsterByCassette() // Метод события на 4/6 кассет
     {
-    monsterActivated = true; // Запоминаем, что событие 4/6 уже запущено
+        monsterActivated = true; // Запоминаем, что событие 4/6 уже запущено со стороны кассет
 
-    if (hallDoors != null) // Если массив дверей существует
-    {
-        foreach (UniversalDoor door in hallDoors) // Проходим по каждой двери
+        UnlockHallDoors(); // Разблокируем двери, если они ещё существуют как UniversalDoor
+
+        if (finalSequence != null) // Если ApartmentFinalSequence назначен
         {
-            if (door != null) // Если дверь назначена
-            {
-                door.SetLocked(false); // Разблокируем дверь через метод, а не напрямую через переменную
-            }
+            finalSequence.StartEarlyHallDoorBreakSequence(); // Запускаем единое событие 4/6
+        }
+        else if (monsterAI != null) // Если финальный режиссёр не назначен, но монстр есть
+        {
+            monsterAI.ActivateMonster(); // Запасной вариант: просто активируем монстра
+        }
+        else // Если ничего не назначено
+        {
+            Debug.LogWarning("CassetteInventoryUI: не назначен ApartmentFinalSequence или MonsterAI"); // Пишем предупреждение
         }
     }
 
-    if (finalSequence != null) // Если ApartmentFinalSequence назначен
+    private void UnlockHallDoors() // Разблокировать двери в зал
     {
-        finalSequence.StartEarlyHallDoorBreakSequence(); // Запускаем выламывание дверей монстром
-    }
-    else if (monsterAI != null) // Если финальный режиссёр не назначен, но монстр есть
-    {
-        monsterAI.ActivateMonster(); // Запасной вариант: просто активируем монстра
-    }
-    else // Если ничего не назначено
-    {
-        Debug.LogWarning("CassetteInventoryUI: не назначен ApartmentFinalSequence или MonsterAI"); // Пишем предупреждение
-    }
+        if (hallDoors == null) return; // Если массива нет — выходим
+
+        foreach (UniversalDoor door in hallDoors) // Проходим по каждой двери
+        {
+            if (door == null) continue; // Если дверь не назначена — пропускаем
+
+            door.SetLocked(false); // Разблокируем дверь через метод
+        }
     }
 
-    void TriggerFinalEvent() // Метод запуска финального события
+    private void TriggerFinalEvent() // Метод запуска финального события
     {
         finalEventTriggered = true; // Запоминаем, что финал уже был запущен
 
@@ -89,19 +94,20 @@ public class CassetteInventoryUI : MonoBehaviour // Скрипт счетчик�
         }
     }
 
-    void UpdateUI() // Обновление UI
+    private void UpdateUI() // Обновление UI
     {
         if (cassetteCounterText == null) return; // Если текста нет — выходим
 
         cassetteCounterText.text = currentCassetteCount + "/" + maxCassetteCount; // Показываем 0/6, 1/6 и т.д.
     }
+
     public void SetCassetteCountDebug(int newCount) // Debug-установка количества кассет
     {
         currentCassetteCount = Mathf.Clamp(newCount, 0, maxCassetteCount); // Ставим нужное количество кассет и ограничиваем максимумом
 
         if (!monsterActivated && currentCassetteCount >= activateMonsterAt) // Если монстр ещё не активирован и кассет 4 или больше
         {
-            ActivateMonster(); // Активируем монстра и разблокируем двери в зал
+            ActivateMonsterByCassette(); // Активируем монстра через тот же сценарий 4/6
         }
 
         if (!finalEventTriggered && currentCassetteCount >= maxCassetteCount) // Если финал ещё не запускался и кассет 6 или больше

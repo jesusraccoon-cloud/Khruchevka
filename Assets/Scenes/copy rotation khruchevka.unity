@@ -55266,6 +55266,13 @@ MonoBehaviour:
   normalHallDoors: {fileID: 669302674}
   brokenHallDoors: {fileID: 256300547}
   hallDoorBreakDelay: 1.5
+  hallDoorBreakAudioSource: {fileID: 0}
+  hallDoorBreakSound: {fileID: 0}
+  enableNoiseAlarmActivation: 1
+  noiseReactionThreshold: 4
+  noiseReactionsToActivate: 3
+  noiseReactionCooldown: 2
+  currentNoiseReactions: 0
   fallenWardrobe: {fileID: 146848218}
   closetPhysicalFall: {fileID: 187589701}
   normalRoomDoor: {fileID: 1704355061}
@@ -83839,6 +83846,12 @@ MonoBehaviour:
   suspiciousLookTime: 2
   normalNoiseSpeed: 2.5
   loudNoiseSpeed: 4.5
+  finalSequence: {fileID: 322523953}
+  enableNoiseAlarmBeforeActivation: 1
+  alarmNoiseThreshold: 4
+  alarmNoiseLimit: 3
+  alarmCooldown: 2
+  currentAlarmCount: 0
 --- !u!114 &481491798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -235949,6 +235962,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   monster: {fileID: 481491791}
   monsterRoomTracker: {fileID: 481491792}
+  finalSequence: {fileID: 0}
   ignoreNoiseWithoutRoom: 1
   unknownRoomMultiplier: 0
   roomConnections:
@@ -358166,12 +358180,12 @@ MonoBehaviour:
   cassetteCounterText: {fileID: 853021191}
   currentCassetteCount: 0
   maxCassetteCount: 6
+  activateMonsterAt: 4
   monsterAI: {fileID: 481491791}
   hallDoors:
   - {fileID: 1918179429}
   - {fileID: 327543406}
   finalSequence: {fileID: 322523953}
-  activateMonsterAt: 4
 --- !u!4 &2001863570
 Transform:
   m_ObjectHideFlags: 0

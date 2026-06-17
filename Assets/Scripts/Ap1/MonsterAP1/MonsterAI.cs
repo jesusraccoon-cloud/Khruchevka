@@ -245,15 +245,13 @@ public class MonsterAI : MonoBehaviour // Центральный фасад мо
 
     public void ReactToNoise(Vector3 noisePosition, int noisePower) // Публичная реакция на шум
     {
-        if (!isActivated) return; // Если монстр не активен — игнорируем
-
         if (currentState == MonsterState.Chase) return; // Если монстр гонится — шум игнорируем
 
         if (finalController != null && finalController.IsFinalModeActive) return; // Если финальный режим — шум игнорируем
 
         if (hearing == null) return; // Если слуха нет — выходим
 
-        hearing.ReactToNoise(noisePosition, noisePower); // Передаём шум в систему слуха
+        hearing.ReactToNoise(noisePosition, noisePower, isActivated); // Передаём шум в слух, но движение разрешаем только после активации
     }
 
     public void HearNoise(Vector3 noisePosition) // Старый метод для совместимости

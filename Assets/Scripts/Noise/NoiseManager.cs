@@ -1,4 +1,4 @@
-using UnityEngine; // Подключаем Unity-классы
+using UnityEngine; // Подключаем Unity
 
 public class NoiseManager : MonoBehaviour // Главный менеджер шума для одной квартиры
 {
@@ -16,6 +16,8 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
     public MonsterAI monster; // Ссылка на MonsterAI этой квартиры
 
     public RoomTracker monsterRoomTracker; // Ссылка на RoomTracker монстра
+
+    public ApartmentFinalSequence finalSequence; // Ссылка на сценарий квартиры для счётчика тревоги 3/3
 
     [Header("Unknown Room Noise")] // Настройки шума вне комнат
     public bool ignoreNoiseWithoutRoom = true; // Игнорировать шум, если источник не находится ни в одной RoomZone
@@ -71,16 +73,10 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
 
         if (showDebugLogs) // Если debug включён
         {
-            Debug.Log(
-                "Шум: " + noisePower +
-                " | из: " + sourceRoom.roomId +
-                " | монстр в: " + monsterRoom.roomId +
-                " | множитель: " + multiplier +
-                " | итог: " + finalNoise
-            ); // Пишем подробный лог
+            Debug.Log("Шум: " + noisePower + " | из: " + sourceRoom.roomId + " | монстр в: " + monsterRoom.roomId + " | множитель: " + multiplier + " | итог: " + finalNoise); // Пишем подробный лог
         }
 
-        TrySendNoiseToMonster(noisePosition, finalNoise); // Передаём итоговый шум монстру
+        TrySendNoiseToMonster(noisePosition, finalNoise); // Передаём итоговый шум монстру и сценарию
     }
 
     public void MakeNoiseFromTracker(Vector3 noisePosition, int noisePower, RoomTracker sourceTracker) // Создать шум от объекта с RoomTracker
@@ -111,15 +107,10 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
 
         if (showDebugLogs) // Если debug включён
         {
-            Debug.Log(
-                "Шум вне RoomZone: " + noisePower +
-                " | монстр в: " + monsterRoom.roomId +
-                " | множитель вне комнат: " + unknownRoomMultiplier +
-                " | итог: " + finalNoise
-            ); // Пишем подробный лог
+            Debug.Log("Шум вне RoomZone: " + noisePower + " | монстр в: " + monsterRoom.roomId + " | множитель вне комнат: " + unknownRoomMultiplier + " | итог: " + finalNoise); // Пишем подробный лог
         }
 
-        TrySendNoiseToMonster(noisePosition, finalNoise); // Передаём ослабленный шум монстру
+        TrySendNoiseToMonster(noisePosition, finalNoise); // Передаём ослабленный шум монстру и сценарию
     }
 
     private int CalculateFinalNoise(int noisePower, float multiplier) // Посчитать итоговый шум
@@ -145,6 +136,11 @@ public class NoiseManager : MonoBehaviour // Главный менеджер ш�
             }
 
             return; // Ничего не делаем
+        }
+
+        if (finalSequence != null) // Если сценарий квартиры назначен
+        {
+            finalSequence.RegisterNoiseReactionForEarlyEvent(finalNoise); // Сообщаем сценарию, что монстр встревожен шумом
         }
 
         if (showDebugLogs) // Если debug включён

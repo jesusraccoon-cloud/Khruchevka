@@ -1,7 +1,8 @@
 using UnityEngine; // Подключаем Unity
 
-public class MonsterHearing : MonoBehaviour // Отвечает только за реакцию монстра на шум
+public class MonsterHearing : MonoBehaviour // Отвечает только за слух монстра и тревогу квартиры от шума
 {
+    [Header("Noise Movement")] // Блок настроек движения к шуму
     public float noiseArriveDistance = 1.2f; // Дистанция прибытия к шуму
 
     public float noiseWaitTime = 4f; // Время ожидания на месте шума
@@ -11,6 +12,21 @@ public class MonsterHearing : MonoBehaviour // Отвечает только з�
     public float normalNoiseSpeed = 2.5f; // Скорость реакции на шум 5-6
 
     public float loudNoiseSpeed = 4.5f; // Скорость реакции на шум 7-10
+
+    [Header("Early Noise Alarm 3/3")] // Блок ранней тревоги квартиры
+    public ApartmentFinalSequence finalSequence; // Ссылка на сценарий квартиры
+
+    public bool enableNoiseAlarmBeforeActivation = true; // Разрешить тревогу до активации монстра
+
+    public int alarmNoiseThreshold = 4; // С какой силы шум считается тревожным
+
+    public int alarmNoiseLimit = 3; // Сколько тревожных реакций нужно для активации
+
+    public float alarmCooldown = 2f; // Задержка между засчитанными шумами
+
+    public int currentAlarmCount = 0; // Текущий счётчик тревоги
+
+    private float lastAlarmTime = -999f; // Время последней засчитанной тревоги
 
     private MonsterMovement movement; // Ссылка на движение
 
@@ -26,7 +42,7 @@ public class MonsterHearing : MonoBehaviour // Отвечает только з�
 
     private bool isWaitingAtNoise; // Монстр стоит на месте шума
 
-    public bool IsBusy => isLookingAround || isInvestigating; // Занят ли слуховой системой
+    public bool IsBusy => isLookingAround || isInvestigating || isWaitingAtNoise; // Занят ли монстр слуховой реакцией
 
     private void Awake() // Вызывается при запуске объекта
     {
@@ -35,11 +51,15 @@ public class MonsterHearing : MonoBehaviour // Отвечает только з�
         patrol = GetComponent<MonsterPatrol>(); // Получаем MonsterPatrol
     }
 
-    public void ReactToNoise(Vector3 newNoisePosition, int noisePower) // Запустить реакцию на шум
+    public void ReactToNoise(Vector3 newNoisePosition, int noisePower, bool allowPhysicalReaction) // Реакция на шум с учётом активности монстра
     {
         noisePower = Mathf.Clamp(noisePower, 1, 10); // Ограничиваем силу шума от 1 до 10
 
         if (noisePower <= 3) return; // Шум 0-3 игнорируется
+
+        RegisterNoiseAlarm(noisePower); // Сначала засчитываем тревогу квартиры
+
+        if (!allowPhysicalReaction) return; // Если монстр ещё не активен — он слышит, но не двигается
 
         if (noisePower == 4) // Если шум равен 4
         {
@@ -60,6 +80,33 @@ public class MonsterHearing : MonoBehaviour // Отвечает только з�
             StartInvestigation(newNoisePosition, loudNoiseSpeed); // Идём к шуму быстро
 
             return; // Выходим
+        }
+    }
+
+    public void ReactToNoise(Vector3 newNoisePosition, int noisePower) // Старый вариант метода для совместимости
+    {
+        ReactToNoise(newNoisePosition, noisePower, true); // По умолчанию разрешаем физическую реакцию
+    }
+
+    private void RegisterNoiseAlarm(int noisePower) // Засчитать тревожный шум
+    {
+        if (!enableNoiseAlarmBeforeActivation) return; // Если тревога выключена — выходим
+
+        if (finalSequence == null) return; // Если сценарий квартиры не назначен — выходим
+
+        if (noisePower < alarmNoiseThreshold) return; // Если шум слабее порога — выходим
+
+        if (Time.time - lastAlarmTime < alarmCooldown) return; // Если шумы идут слишком часто — не считаем
+
+        lastAlarmTime = Time.time; // Запоминаем время тревоги
+
+        currentAlarmCount = Mathf.Clamp(currentAlarmCount + 1, 0, alarmNoiseLimit); // Увеличиваем счётчик тревоги
+
+        Debug.Log("Тревога квартиры: " + currentAlarmCount + "/" + alarmNoiseLimit + " | шум: " + noisePower); // Пишем лог
+
+        if (currentAlarmCount >= alarmNoiseLimit) // Если тревога достигла лимита
+        {
+            finalSequence.StartEarlyHallDoorBreakSequence(); // Просим сценарий квартиры запустить событие 4/6
         }
     }
 
