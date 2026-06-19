@@ -4,9 +4,11 @@ public class MonsterAttack : MonoBehaviour // Отвечает только за
 {
     public Transform player; // Ссылка на игрока
 
-    public float attackDistance = 1.2f; // Дистанция атаки
+    public float attackDistance = 1.2f; // Дистанция обычной атаки
 
     public float attackDelay = 1.2f; // Задержка перед Game Over
+
+    public float hideCatchDelay = 1.0f; // Задержка перед Game Over при вытаскивании из шкафа
 
     public Animator animator; // Animator монстра
 
@@ -32,19 +34,39 @@ public class MonsterAttack : MonoBehaviour // Отвечает только за
         return distance <= attackDistance; // Возвращаем true, если игрок достаточно близко
     }
 
-    public void StartAttack() // Запустить атаку
+    public void StartAttack() // Запустить обычную атаку
     {
         if (isAttacking) return; // Если атака уже идёт — выходим
 
         isAttacking = true; // Помечаем атаку активной
 
-        if (playerController != null) playerController.canMove = false; // Запрещаем игроку двигаться
-
-        if (playerController != null) playerController.canLook = false; // Запрещаем игроку смотреть
+        FreezePlayer(); // Блокируем управление игрока
 
         if (animator != null) animator.SetTrigger("Attack"); // Запускаем trigger Attack в Animator
 
         Invoke(nameof(FinishAttack), attackDelay); // Через задержку показываем Game Over
+    }
+
+    public void StartHideCatchAttack(UniversalDoor wardrobeDoor) // Запустить смерть при прятках на глазах монстра
+    {
+        if (isAttacking) return; // Если атака уже идёт — выходим
+
+        isAttacking = true; // Помечаем атаку активной
+
+        FreezePlayer(); // Блокируем управление игрока
+
+        if (wardrobeDoor != null) wardrobeDoor.OpenDoor(); // Открываем дверь шкафа, будто монстр вытаскивает игрока
+
+        if (animator != null) animator.SetTrigger("Attack"); // Пока используем обычный Attack trigger
+
+        Invoke(nameof(FinishAttack), hideCatchDelay); // Через задержку показываем Game Over
+    }
+
+    private void FreezePlayer() // Заблокировать игрока
+    {
+        if (playerController != null) playerController.canMove = false; // Запрещаем игроку двигаться
+
+        if (playerController != null) playerController.canLook = false; // Запрещаем игроку смотреть
     }
 
     private void FinishAttack() // Завершить атаку

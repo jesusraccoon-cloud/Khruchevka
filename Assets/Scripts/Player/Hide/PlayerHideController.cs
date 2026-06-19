@@ -1,7 +1,7 @@
 using UnityEngine; // Подключаем Unity-классы
 using System.Collections; // Подключаем корутины
 
-public class PlayerHideController : MonoBehaviour, IHoldInteractable // Контроллер пряток игрока через удержание E
+public class PlayerHideController : MonoBehaviour // Контроллер пряток игрока через отдельную кнопку Q
 {
     public bool isHidden = false; // Спрятан ли игрок сейчас
 
@@ -9,9 +9,13 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
 
     public Behaviour[] movementScriptsToDisable; // Скрипты движения, которые отключаются в шкафу
 
-    public float exitInputDelay = 0.5f; // Задержка после входа, чтобы нельзя было сразу выйти
+    public MonsterVision monsterVision; // Зрение монстра для проверки “видел ли он вход в шкаф”
 
-    public float holdTimeToExit = 2f; // Сколько секунд нужно держать E, чтобы выйти
+    public MonsterAttack monsterAttack; // Атака монстра для смерти при прятках на глазах
+
+    public bool dieIfMonsterSeesHide = true; // Убивать ли игрока, если он спрятался на глазах монстра
+
+    public float exitInputDelay = 0.5f; // Задержка после входа, чтобы нельзя было сразу выйти
 
     public float doorOpenBeforeExitDelay = 0.4f; // Пауза после открытия двери перед выходом
 
@@ -25,38 +29,24 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
 
     private bool isExiting = false; // Защита от повторного выхода
 
-    private bool exitStarted = false; // Был ли уже запущен выход во время текущего удержания
-
     private void Reset() // Вызывается при добавлении скрипта на объект
     {
         characterController = GetComponent<CharacterController>(); // Автоматически ищем CharacterController
     }
 
-    public void HoldInteract(float holdTime) // Вызывается каждый кадр, пока игрок держит E
+    public bool WouldMonsterSeeHideNow() // Проверить, видит ли монстр игрока прямо сейчас перед прятками
     {
-        if (!isHidden) return; // Если игрок не спрятан — выход не нужен
+        if (!dieIfMonsterSeesHide) return false; // Если наказание выключено — монстр как будто не видел
 
-        if (isExiting) return; // Если уже выходим — ничего не делаем
+        if (monsterVision == null) return false; // Если зрение монстра не назначено — не считаем игрока увиденным
 
-        if (exitStarted) return; // Если выход уже запущен — повторно не запускаем
-
-        if (Time.time < hideEnterTime + exitInputDelay) return; // Если задержка после входа ещё не прошла — выходим
-
-        if (holdTime >= holdTimeToExit) // Если E удерживали достаточно долго
-        {
-            exitStarted = true; // Запоминаем, что выход уже запущен
-
-            StartCoroutine(ExitHideSequence()); // Запускаем выход из шкафа
-        }
-    }
-
-    public void HoldCancel(float holdTime) // Вызывается, когда игрок отпустил E
-    {
-        exitStarted = false; // Сбрасываем флаг выхода
+        return monsterVision.CanSeePlayerIgnoringHide(); // Проверяем зрение без учёта будущего шкафа
     }
 
     public void Hide(Transform hidePoint, Transform exitPoint, UniversalDoor door) // Метод входа в шкаф
     {
+        if (isHidden) return; // Если игрок уже спрятан — выходим
+
         if (hidePoint == null || exitPoint == null) return; // Если точки не назначены — выходим
 
         isHidden = true; // Помечаем игрока как спрятанного
@@ -67,62 +57,63 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
 
         currentDoor = door; // Запоминаем дверь шкафа
 
-        exitStarted = false; // Сбрасываем состояние выхода
-
         SetMovement(false); // Отключаем движение игрока
 
         TeleportPlayer(hidePoint.position); // Переносим игрока внутрь шкафа
+    }
+
+    public void PunishSeenHide(UniversalDoor wardrobeDoor) // Наказать игрока за прятки на глазах монстра
+    {
+        if (!dieIfMonsterSeesHide) return; // Если наказание выключено — выходим
+
+        if (monsterAttack == null) return; // Если атака монстра не назначена — выходим
+
+        monsterAttack.StartHideCatchAttack(wardrobeDoor); // Запускаем вытаскивание из шкафа и Game Over
+    }
+
+    public void TryExitHide() // Попытка выйти из шкафа по Q
+    {
+        if (!isHidden) return; // Если игрок не спрятан — выходим
+
+        if (isExiting) return; // Если уже выходим — выходим
+
+        if (Time.time < hideEnterTime + exitInputDelay) return; // Если задержка после входа ещё не прошла — выходим
+
+        StartCoroutine(ExitHideSequence()); // Запускаем выход из шкафа
     }
 
     private IEnumerator ExitHideSequence() // Последовательность выхода из шкафа
     {
         isExiting = true; // Блокируем повторный выход
 
-        if (currentDoor != null) // Если дверь шкафа назначена
-        {
-            currentDoor.OpenDoor(); // Открываем дверь шкафа
-        }
+        if (currentDoor != null) currentDoor.OpenDoor(); // Открываем дверь шкафа
 
         yield return new WaitForSeconds(doorOpenBeforeExitDelay); // Ждём открытия двери
 
         isHidden = false; // Игрок больше не спрятан
 
-        if (currentExitPoint != null) // Если точка выхода есть
-        {
-            TeleportPlayer(currentExitPoint.position); // Переносим игрока наружу
-        }
+        if (currentExitPoint != null) TeleportPlayer(currentExitPoint.position); // Переносим игрока наружу
 
         SetMovement(true); // Включаем движение игрока
 
         yield return new WaitForSeconds(doorCloseAfterExitDelay); // Ждём после выхода
 
-        if (currentDoor != null) // Если дверь шкафа назначена
-        {
-            currentDoor.CloseDoor(); // Закрываем дверь шкафа
-        }
+        if (currentDoor != null) currentDoor.CloseDoor(); // Закрываем дверь шкафа
 
         currentDoor = null; // Очищаем ссылку на дверь
 
         currentExitPoint = null; // Очищаем точку выхода
 
-        isExiting = false; // Разрешаем следующие выходы
-
-        exitStarted = false; // Сбрасываем флаг выхода
+        isExiting = false; // Разрешаем следующий выход
     }
 
     private void TeleportPlayer(Vector3 targetPosition) // Безопасный перенос игрока
     {
-        if (characterController != null) // Если CharacterController назначен
-        {
-            characterController.enabled = false; // Отключаем его перед переносом
-        }
+        if (characterController != null) characterController.enabled = false; // Отключаем CharacterController перед переносом
 
         transform.position = targetPosition; // Переносим игрока
 
-        if (characterController != null) // Если CharacterController назначен
-        {
-            characterController.enabled = true; // Включаем обратно
-        }
+        if (characterController != null) characterController.enabled = true; // Включаем CharacterController обратно
     }
 
     private void SetMovement(bool enabledState) // Включает или выключает движение
@@ -131,10 +122,7 @@ public class PlayerHideController : MonoBehaviour, IHoldInteractable // Конт
 
         for (int i = 0; i < movementScriptsToDisable.Length; i++) // Перебираем все скрипты движения
         {
-            if (movementScriptsToDisable[i] != null) // Если ссылка не пустая
-            {
-                movementScriptsToDisable[i].enabled = enabledState; // Включаем или выключаем скрипт
-            }
+            if (movementScriptsToDisable[i] != null) movementScriptsToDisable[i].enabled = enabledState; // Включаем или выключаем скрипт
         }
     }
 }
